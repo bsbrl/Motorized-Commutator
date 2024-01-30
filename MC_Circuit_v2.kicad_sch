@@ -1682,7 +1682,6 @@
     )
   )
 
-
   (junction (at 135.89 114.3) (diameter 0) (color 0 0 0 0)
     (uuid 02ab6b07-677b-4d3f-9526-94f1848f24a1)
   )
@@ -1776,7 +1775,7 @@
 
   (no_connect (at 128.27 119.38) (uuid 85cfcaee-8651-491b-829d-30f6a638ab5e))
   (no_connect (at 128.27 121.92) (uuid 8a38878e-2d6e-414b-9c2e-e9b1ab2b97b6))
-  (no_connect (at 92.71 119.38) (uuid 8a38878e-2d6e-414b-9c2e-e9b1ab2b97b6))
+  (no_connect (at 92.71 119.38) (uuid 8a38878e-2d6e-414b-9c2e-e9b1ab2b97b7))
   (no_connect (at 39.37 64.77) (uuid d3f0013e-ec18-4ab0-93ab-1864a3335cc2))
   (no_connect (at 218.44 96.52) (uuid d752ab5c-47f1-443a-995f-8df88a10dcf6))
   (no_connect (at 160.02 34.29) (uuid dfd5d2b0-882e-4339-a67c-ea948723aad7))
@@ -3121,7 +3120,7 @@
     (property "Reference" "R1" (id 0) (at 169.418 107.1153 0)
       (effects (font (size 1.27 1.27)) (justify left))
     )
-    (property "Value" "330R" (id 1) (at 169.418 109.6522 0)
+    (property "Value" "220R" (id 1) (at 169.418 109.6522 0)
       (effects (font (size 1.27 1.27)) (justify left))
     )
     (property "Footprint" "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder" (id 2) (at 165.862 107.95 90)
@@ -3356,7 +3355,7 @@
     (in_bom yes) (on_board yes) (fields_autoplaced)
     (uuid a7b7cb41-c076-48e8-868c-46d88c15eacd)
     (property "Reference" "R3" (id 0) (at 218.44 27.0342 90))
-    (property "Value" "330R" (id 1) (at 218.44 29.5711 90))
+    (property "Value" "220R" (id 1) (at 218.44 29.5711 90))
     (property "Footprint" "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder" (id 2) (at 218.44 33.528 90)
       (effects (font (size 1.27 1.27)) hide)
     )
@@ -3546,7 +3545,7 @@
     (property "Reference" "R2" (id 0) (at 180.848 107.1153 0)
       (effects (font (size 1.27 1.27)) (justify left))
     )
-    (property "Value" "330R" (id 1) (at 180.848 109.6522 0)
+    (property "Value" "220R" (id 1) (at 180.848 109.6522 0)
       (effects (font (size 1.27 1.27)) (justify left))
     )
     (property "Footprint" "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder" (id 2) (at 177.292 107.95 90)
@@ -3805,13 +3804,13 @@
       (reference "J9") (unit 1) (value "STEPPER") (footprint "Connector_JST:JST_EH_B4B-EH-A_1x04_P2.50mm_Vertical")
     )
     (path "/67fc09ef-9e3a-4533-8275-4ec827a63b1a"
-      (reference "R1") (unit 1) (value "330R") (footprint "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder")
+      (reference "R1") (unit 1) (value "220R") (footprint "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder")
     )
     (path "/d4d24243-2659-4027-8f81-2270bee63b96"
-      (reference "R2") (unit 1) (value "330R") (footprint "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder")
+      (reference "R2") (unit 1) (value "220R") (footprint "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder")
     )
     (path "/a7b7cb41-c076-48e8-868c-46d88c15eacd"
-      (reference "R3") (unit 1) (value "330R") (footprint "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder")
+      (reference "R3") (unit 1) (value "220R") (footprint "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder")
     )
     (path "/ddaf6252-3b2f-49cd-b1e7-bd834e427789"
       (reference "SW1") (unit 1) (value "SW_SPDT") (footprint "Connector_PinHeader_2.54mm:PinHeader_1x03_P2.54mm_Vertical")
