@@ -1562,6 +1562,11 @@
       (net 41 "Net-(J5-Pad1)") (pintype "passive") (solder_mask_margin 0.102) (tstamp 722cb8c9-9590-4867-9de3-667f80afb253))
     (pad "3" thru_hole circle locked (at 0 4.7 90) (size 2.775 2.775) (drill 1.85) (layers *.Cu *.Mask)
       (net 50 "unconnected-(S1-Pad3)") (pintype "passive+no_connect") (solder_mask_margin 0.102) (tstamp 3acd3c6f-78f9-4837-b41e-8da108435721))
+    (model "H:/Other computers/My PC/PhD_UOM/General/BSBRL/Projects/General Circuit Design/100SP1T1B4M2QE_SPDT_Toggle_Switch/100SP1T1B4M2QE.step"
+      (offset (xyz 0 0 -23))
+      (scale (xyz 1 1 1))
+      (rotate (xyz 0 0 90))
+    )
   )
 
   (footprint "Capacitor_SMD:C_0805_2012Metric_Pad1.18x1.45mm_HandSolder" (layer "F.Cu")
