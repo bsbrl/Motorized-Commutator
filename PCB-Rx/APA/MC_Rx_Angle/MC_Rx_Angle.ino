@@ -9,7 +9,7 @@
   - This script receives data wireless from the transmitter.
   - The received data are motor commands.
   - Motor is driven using acceleration and decelerations to achieve the target position.
-  - This code works for the A4988 stepper motor alone
+  - This code has been updated to work for just TMC2209 stepper motor driver
 */
 
 #include <Arduino.h>
@@ -56,13 +56,13 @@ AccelStepper myStepper(motorInterfaceType, STEP_PIN, DIR_PIN);
 TMC2209Stepper driver(&SERIAL_PORT, R_SENSE, DRIVER_ADDRESS);
 
 int equiValue = 512;
-int equiOffset = 300;
+int equiOffset = 350;
 
 // The angleMapper variable is used to calibrate the stepper rotation to give
 // 1 revolution rotation on the cable holder pulley.
 float angleMapper = 3;
 
-int fixedAngle = 360 * angleMapper;
+int fixedAngle = 1710;
 
 // int angle = 0;
 int steps = 0;
@@ -164,7 +164,7 @@ void loop() {
         // Serial.println("Upward movement");
 
         // Convert angle to steps
-        steps = fixedAngle * ((200*STEPSIZE) / 360.0);
+        steps = fixedAngle;
         Serial.print("Steps is: ");
         Serial.println(steps);
         Serial.println("");
@@ -186,7 +186,7 @@ void loop() {
         driver.shaft(shaft);
         
         // Convert angle to steps
-        steps = -1 * fixedAngle * ((200*STEPSIZE) / 360.0);
+        steps = fixedAngle;
         Serial.print("Steps is: ");
         Serial.println(steps);
         Serial.println("");
