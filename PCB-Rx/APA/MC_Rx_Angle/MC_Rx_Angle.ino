@@ -17,6 +17,7 @@
 #include <nRF24L01.h>
 #include <RF24.h>
 #include <AccelStepper.h>
+#include <TMCStepper.h>
 
 #define STEPSIZE  4
 
@@ -25,6 +26,10 @@
 
 #define MANUAL_LED  15
 #define AUTO_LED    14
+
+#define SERIAL_PORT Serial5 // HardwareSerial port | Default: Serial1 
+#define DRIVER_ADDRESS 0b00 // TMC2209 Driver address according to MS1 and MS2
+#define R_SENSE 0.11f
 
 RF24 radio(9, 10); // CE, CSN
 const byte address[6] = "00001";
@@ -42,13 +47,12 @@ Data_Package data; // Create a variable with the above structure
 // #define STEPS 200
 #define motorInterfaceType 1
 
-// Define stepper motor pin connections
-const int dirPin = 2;
-const int stepPin = 3;
-
 // Define stepper motor connections and motor interface type. Motor interface type must be set to 1 when using a driver
 // Stepper stepper(STEPS, dirPin, stepPin); // Pin 2 connected to DIRECTION & Pin 3 connected to STEP Pin of Driver
-AccelStepper myStepper(motorInterfaceType, stepPin, dirPin);
+AccelStepper myStepper(motorInterfaceType, STEP_PIN, DIR_PIN);
+
+// Initialize the serial communication for TMC2209
+TMC2208Stepper driver(&SERIAL_PORT, R_SENSE);
 
 int equiValue = 512;
 int equiOffset = 300;
@@ -61,19 +65,22 @@ int fixedAngle = 360 * angleMapper;
 
 // int angle = 0;
 int steps = 0;
-int stepperSpeed = 2500;           // 200 is default  50
-int stepperAcceleration = 4000;    // 50 is default  200
+int stepperSpeed = 1000;           // 2500 is default  50
+int stepperAcceleration = 250;     // 4000 is default  200
 
 
 void setup() {
   
   Serial.begin(115200);
   Serial.println("Initializing ...");
-  
-  radio.begin();
+
+  pinMode(DIR_PIN, OUTPUT);
+  pinMode(STEP_PIN, OUTPUT);
   
   // **********************************************
   // CONFIGURE THE NRF24L01
+
+  radio.begin();
 
   //set the address
   radio.openReadingPipe(0, address);
@@ -97,11 +104,29 @@ void setup() {
   //Set module as receiver
   radio.startListening();
 
+  // **********************************************
+  // CONFIGURE THE TMC2209
+
+  SERIAL_PORT.begin(115200);      // INITIALIZE UART TMC2209
+
+  driver.begin();                // Initialize driver                        
+  driver.toff(5);                // Enables driver in software
+  driver.rms_current(600);       // Set motor RMS current | 1400 is max
+  driver.microsteps(256);           // Set microsteps to 1/2
+  driver.pwm_autoscale(true);   // Needed for stealthChop
+  driver.en_spreadCycle(true);   // Toggle spreadCycle for smooth & silent operation
+
   // Set the maximum speed, acceleration factor,
 	// initial speed and the target position
 	myStepper.setMaxSpeed(stepperSpeed);
 	myStepper.setAcceleration(stepperAcceleration);
 	myStepper.setSpeed(stepperSpeed);
+  myStepper.stop();
+
+  Serial.println( "*****************" );
+  Serial.println( "Stepper Configured!" );
+
+  // **********************************************
 
   Serial.println( "*****************" );
   Serial.println( "APA MC Rx angle is ready!" );
