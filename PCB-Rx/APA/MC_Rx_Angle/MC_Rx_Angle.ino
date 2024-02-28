@@ -4,7 +4,7 @@
   Purpose: Receives motor commands wirelessly and drives motor.
 
   @author Ibrahim Oladepo
-  @version 1.0  1-September-2023
+  @version 1.0  28-February-2024
 
   - This script receives data wireless from the transmitter.
   - The received data are motor commands.
