@@ -52,7 +52,8 @@ Data_Package data; // Create a variable with the above structure
 AccelStepper myStepper(motorInterfaceType, STEP_PIN, DIR_PIN);
 
 // Initialize the serial communication for TMC2209
-TMC2208Stepper driver(&SERIAL_PORT, R_SENSE);
+// TMC2208Stepper driver(&SERIAL_PORT, R_SENSE);
+TMC2209Stepper driver(&SERIAL_PORT, R_SENSE, DRIVER_ADDRESS);
 
 int equiValue = 512;
 int equiOffset = 300;
@@ -66,8 +67,10 @@ int fixedAngle = 360 * angleMapper;
 // int angle = 0;
 int steps = 0;
 int stepperSpeed = 1000;           // 2500 is default  50
-int stepperAcceleration = 250;     // 4000 is default  200
+int stepperAcceleration = 1000;     // 4000 is default  200
 
+// Variable for changing motor direction via UART
+bool shaft = false; 
 
 void setup() {
   
@@ -87,13 +90,13 @@ void setup() {
 
   // Set power level
   // radio.setPALevel( RF24_PA_MIN ); // -18dBm
-  radio.setPALevel( RF24_PA_LOW ); // -12dBm
-  // radio.setPALevel( RF24_PA_HIGH ); // -6dBm
+  // radio.setPALevel( RF24_PA_LOW ); // -12dBm
+  radio.setPALevel( RF24_PA_HIGH ); // -6dBm
 
   // changer the transfer rate as needed
-  radio.setDataRate( RF24_250KBPS );
+  // radio.setDataRate( RF24_250KBPS );
   // radio.setDataRate( RF24_1MBPS );
-  // radio.setDataRate( RF24_2MBPS );
+  radio.setDataRate( RF24_2MBPS );
 
   // Change the channel (transmit-receive frequency) as needed
   // channel = 0 to 125 correspond to the range 2,400GHz to 2,500GHz
@@ -115,6 +118,7 @@ void setup() {
   driver.microsteps(256);           // Set microsteps to 1/2
   driver.pwm_autoscale(true);   // Needed for stealthChop
   driver.en_spreadCycle(true);   // Toggle spreadCycle for smooth & silent operation
+  driver.VACTUAL(0); //SET initial SPEED OF MOTOR to zero
 
   // Set the maximum speed, acceleration factor,
 	// initial speed and the target position
@@ -122,6 +126,11 @@ void setup() {
 	myStepper.setAcceleration(stepperAcceleration);
 	myStepper.setSpeed(stepperSpeed);
   myStepper.stop();
+
+  if (myStepper.isRunning()){
+    driver.VACTUAL(0);
+    myStepper.stop();
+  }
 
   Serial.println( "*****************" );
   Serial.println( "Stepper Configured!" );
@@ -172,6 +181,10 @@ void loop() {
         // Debug print
         // Serial.println("Downward movement");
 
+        // Change motor direction via UART
+        shaft = !shaft;
+        driver.shaft(shaft);
+        
         // Convert angle to steps
         steps = -1 * fixedAngle * ((200*STEPSIZE) / 360.0);
         Serial.print("Steps is: ");
@@ -218,7 +231,11 @@ void loop() {
   }
 
   if (myStepper.distanceToGo() != 0){
+    driver.VACTUAL(102400/2);
     myStepper.run();
+  }
+  else{
+    driver.VACTUAL(0);
   }
   
 }
