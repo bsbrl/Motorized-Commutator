@@ -53,7 +53,10 @@ AccelStepper myStepper(motorInterfaceType, stepPin, dirPin);
 int equiValue = 512;
 int equiOffset = 300;
 
+// The angleMapper variable is used to calibrate the stepper rotation to give
+// 1 revolution rotation on the cable holder pulley.
 float angleMapper = 3;
+
 int fixedAngle = 360 * angleMapper;
 
 // int angle = 0;
@@ -68,26 +71,25 @@ void setup() {
   Serial.println("Initializing ...");
   
   radio.begin();
+  
+  // **********************************************
+  // CONFIGURE THE NRF24L01
 
   //set the address
   radio.openReadingPipe(0, address);
-  
-  // régler puissance d'émission
+
+  // Set power level
   // radio.setPALevel( RF24_PA_MIN ); // -18dBm
-  // radio.setPALevel( RF24_PA_LOW ); // -12dBm
-  radio.setPALevel( RF24_PA_HIGH ); // -6dBm
-  // radio.setPALevel( RF24_PA_MAX ); // 0dBm
+  radio.setPALevel( RF24_PA_LOW ); // -12dBm
+  // radio.setPALevel( RF24_PA_HIGH ); // -6dBm
 
   // changer the transfer rate as needed
-  // radio.setDataRate( RF24_250KBPS ); // pour portée maximum
+  radio.setDataRate( RF24_250KBPS );
   // radio.setDataRate( RF24_1MBPS );
-  radio.setDataRate( RF24_2MBPS );
+  // radio.setDataRate( RF24_2MBPS );
 
   // Change the channel (transmit-receive frequency) as needed
   // channel = 0 to 125 correspond to the range 2,400GHz to 2,500GHz
-  // NOTE: if DataRate is set to 2MBPS, the bandwidth
-  // is 2 MHz and we must therefore skip every other channel 
-  // to avoid overlaps
   radio.setChannel( 90 );
 
   radio.printDetails();
@@ -95,15 +97,14 @@ void setup() {
   //Set module as receiver
   radio.startListening();
 
-  // set the maximum speed, acceleration factor,
+  // Set the maximum speed, acceleration factor,
 	// initial speed and the target position
 	myStepper.setMaxSpeed(stepperSpeed);
 	myStepper.setAcceleration(stepperAcceleration);
 	myStepper.setSpeed(stepperSpeed);
-	// myStepper.moveTo(200);
 
   Serial.println( "*****************" );
-  Serial.println( "Receiver is Ready" );
+  Serial.println( "APA MC Rx angle is ready!" );
   
 }
 
@@ -170,13 +171,15 @@ void loop() {
 
       // steps = data.angle;
       // Convert angle to steps
-      steps = data.angle * 3 * ((200*STEPSIZE) / 360.0);
+      steps = data.angle * angleMapper * ((200*STEPSIZE) / 360.0);
       // Serial.print("Steps is: ");
       // Serial.println(steps);
       // Serial.println("");
 
+      // TODO: 
       // Check if stepper is running before sending new command
-      // Stop the stepper motor if it is running
+      // If stepper is running, add new steps to current distanceToGo
+
       // if (myStepper.isRunning()){
       //   myStepper.stop();
       // }
