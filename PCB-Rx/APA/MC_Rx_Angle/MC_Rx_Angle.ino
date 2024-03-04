@@ -4,7 +4,7 @@
   Purpose: Receives motor commands wirelessly and drives motor.
 
   @author Ibrahim Oladepo
-  @version 1.0  28-February-2024
+  @version 1.0  4-March-2024
 
   - This script receives data wireless from the transmitter.
   - The received data are motor commands.
@@ -19,7 +19,13 @@
 #include <AccelStepper.h>
 #include <TMCStepper.h>
 
-#define STEPSIZE  4
+#define STEPSIZE        64
+#define STEPS           200
+#define SCALER          16
+#define STEPS_PER_MM    80
+#define REVOLUTION      (40 * (STEPSIZE / SCALER) * 3 * STEPS_PER_MM)
+
+#define motorInterfaceType 1
 
 #define DIR_PIN     2
 #define STEP_PIN    3
@@ -44,9 +50,6 @@ struct Data_Package {
 
 Data_Package data; // Create a variable with the above structure
 
-// #define STEPS 200
-#define motorInterfaceType 1
-
 // Define stepper motor connections and motor interface type. Motor interface type must be set to 1 when using a driver
 // Stepper stepper(STEPS, dirPin, stepPin); // Pin 2 connected to DIRECTION & Pin 3 connected to STEP Pin of Driver
 AccelStepper myStepper(motorInterfaceType, STEP_PIN, DIR_PIN);
@@ -67,8 +70,8 @@ int fixedAngle = 1710;            // 1710 for 256 microsteps
 // int angle = 0;
 int steps = 0;
 int stepperSpeed = 1000;           // 2500 is default  50
-int stepperAcceleration = 2500;     // 4000 is default  200
-int vActual = 102400 / 6;           // Default is 102400/2 for 256 microsteps
+int stepperAcceleration = 1000;     // 4000 is default  200
+// int vActual = MAX_SPEED / SPEED_DIVIDER;           // Default is 102400/2 for 256 microsteps
 
 // Variable for changing motor direction via UART
 bool shaft = false; 
@@ -123,8 +126,8 @@ void setup() {
 
   // Set the maximum speed, acceleration factor,
 	// initial speed and the target position
-	myStepper.setMaxSpeed(stepperSpeed);
-	myStepper.setAcceleration(stepperAcceleration);
+	myStepper.setMaxSpeed(STEPS_PER_MM * 200);
+	myStepper.setAcceleration(STEPS_PER_MM * 1000);
 	myStepper.setSpeed(stepperSpeed);
   myStepper.stop();
 
@@ -178,7 +181,8 @@ void loop() {
           myStepper.stop();
         }
         
-        myStepper.move(steps);
+        // myStepper.move(steps);
+        myStepper.move(REVOLUTION);
         // myStepper.runToPosition();
 
       } else if (data.angle < (equiValue - equiOffset)){
@@ -200,7 +204,7 @@ void loop() {
           myStepper.stop();
         }
         
-        myStepper.move(steps);
+        myStepper.move(REVOLUTION);
         // myStepper.runToPosition();
 
       }
@@ -227,12 +231,16 @@ void loop() {
     
   }
 
+  // if (myStepper.distanceToGo() != 0){
+  //   driver.VACTUAL(vActual);
+  //   myStepper.run();
+  // }
+  // else{
+  //   driver.VACTUAL(0);
+  // }
+
   if (myStepper.distanceToGo() != 0){
-    driver.VACTUAL(vActual);
     myStepper.run();
-  }
-  else{
-    driver.VACTUAL(0);
   }
   
 }
