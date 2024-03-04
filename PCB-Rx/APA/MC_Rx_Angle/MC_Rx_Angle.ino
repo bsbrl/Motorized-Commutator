@@ -62,12 +62,13 @@ int equiOffset = 350;
 // 1 revolution rotation on the cable holder pulley.
 float angleMapper = 3;
 
-int fixedAngle = 1710;
+int fixedAngle = 1710;            // 1710 for 256 microsteps
 
 // int angle = 0;
 int steps = 0;
 int stepperSpeed = 1000;           // 2500 is default  50
-int stepperAcceleration = 1000;     // 4000 is default  200
+int stepperAcceleration = 2500;     // 4000 is default  200
+int vActual = 102400 / 6;           // Default is 102400/2 for 256 microsteps
 
 // Variable for changing motor direction via UART
 bool shaft = false; 
@@ -114,8 +115,8 @@ void setup() {
 
   driver.begin();                // Initialize driver                        
   driver.toff(5);                // Enables driver in software
-  driver.rms_current(600);       // Set motor RMS current | 1400 is max
-  driver.microsteps(256);           // Set microsteps to 1/2
+  driver.rms_current(1400);       // Set motor RMS current | 1400 is max | 600 default
+  driver.microsteps(64);           // Set microsteps to 256 (preferred) or 64 or 32
   driver.pwm_autoscale(true);   // Needed for stealthChop
   driver.en_spreadCycle(true);   // Toggle spreadCycle for smooth & silent operation
   driver.VACTUAL(0); //SET initial SPEED OF MOTOR to zero
@@ -163,6 +164,10 @@ void loop() {
         // Debug print
         // Serial.println("Upward movement");
 
+        // Change motor direction via UART
+        shaft = true;
+        driver.shaft(shaft);
+
         // Convert angle to steps
         steps = fixedAngle;
         Serial.print("Steps is: ");
@@ -182,7 +187,7 @@ void loop() {
         // Serial.println("Downward movement");
 
         // Change motor direction via UART
-        shaft = !shaft;
+        shaft = false;
         driver.shaft(shaft);
         
         // Convert angle to steps
@@ -214,14 +219,6 @@ void loop() {
       // Serial.println(steps);
       // Serial.println("");
 
-      // TODO: 
-      // Check if stepper is running before sending new command
-      // If stepper is running, add new steps to current distanceToGo
-
-      // if (myStepper.isRunning()){
-      //   myStepper.stop();
-      // }
-
       // Set a new target position
       myStepper.move(steps);
       myStepper.runToPosition();
@@ -231,7 +228,7 @@ void loop() {
   }
 
   if (myStepper.distanceToGo() != 0){
-    driver.VACTUAL(102400/2);
+    driver.VACTUAL(vActual);
     myStepper.run();
   }
   else{
