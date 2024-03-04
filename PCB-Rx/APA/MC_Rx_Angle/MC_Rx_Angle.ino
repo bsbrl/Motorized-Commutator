@@ -218,7 +218,8 @@ void loop() {
 
       // steps = data.angle;
       // Convert angle to steps
-      steps = data.angle * angleMapper * ((200*STEPSIZE) / 360.0);
+      // (40 * (STEPSIZE / SCALER) * 3 * STEPS_PER_MM) = 38400
+      steps = (data.angle * 38400 ) / 360.0;
       // Serial.print("Steps is: ");
       // Serial.println(steps);
       // Serial.println("");
