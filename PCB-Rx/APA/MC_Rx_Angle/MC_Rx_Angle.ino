@@ -4,7 +4,7 @@
   Purpose: Receives motor commands wirelessly and drives motor.
 
   @author Ibrahim Oladepo
-  @version 1.0  4-March-2024
+  @version 1.0  5-March-2024
 
   - This script receives data wireless from the transmitter.
   - The received data are motor commands.
@@ -19,7 +19,7 @@
 #include <AccelStepper.h>
 #include <TMCStepper.h>
 
-#define STEPSIZE        64
+#define STEPSIZE        256     // 64
 #define STEPS           200
 #define SCALER          16
 #define STEPS_PER_MM    80
@@ -119,7 +119,7 @@ void setup() {
   driver.begin();                // Initialize driver                        
   driver.toff(5);                // Enables driver in software
   driver.rms_current(1400);       // Set motor RMS current | 1400 is max | 600 default
-  driver.microsteps(64);           // Set microsteps to 256 (preferred) or 64 or 32
+  driver.microsteps(STEPSIZE);           // Set microsteps to 256 (preferred) or 64 or 32
   driver.pwm_autoscale(true);   // Needed for stealthChop
   driver.en_spreadCycle(true);   // Toggle spreadCycle for smooth & silent operation
   driver.VACTUAL(0); //SET initial SPEED OF MOTOR to zero
@@ -219,7 +219,7 @@ void loop() {
       // steps = data.angle;
       // Convert angle to steps
       // (40 * (STEPSIZE / SCALER) * 3 * STEPS_PER_MM) = 38400
-      steps = (data.angle * 38400 ) / 360.0;
+      steps = (data.angle * 38400 * 4 ) / 360.0;  // *4 added for 256 microsteps
       // Serial.print("Steps is: ");
       // Serial.println(steps);
       // Serial.println("");
