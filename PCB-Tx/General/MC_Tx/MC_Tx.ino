@@ -16,13 +16,15 @@
 #include <nRF24L01.h>
 #include <RF24.h>
 
-#define ANALOG_STICK_PIN_X A3
-#define ANALOG_STICK_PIN_Y A4
-#define ANALOG_STICK_PIN_Z A6
-#define ANALOG_STICK_PIN_ANGLE A5
+#define ANALOG_STICK_PIN_X        A6
+// #define ANALOG_STICK_PIN_Y A5
+#define ANALOG_STICK_PIN_Z        A5
+// #define ANALOG_STICK_PIN_ANGLE    A6
+#define BUTTON_ANGLE_LEFT         5
+#define BUTTON_ANGLE_RIGHT        18                 
 
-#define MANUAL_LED  15
-#define AUTO_LED    14
+#define MANUAL_LED  22
+#define AUTO_LED    21
 
 RF24 radio(9, 10); // CE, CSN
 const byte address[6] = "00001";
