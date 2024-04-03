@@ -1,5 +1,7 @@
 # Computer vision guided open-source active commutator for neural imaging in freely behaving animals
 
+This repository contains the necessary software, CAD, and PCB fabrication files, and instructions needed to setup a CV guided open-source active commutator for neural imaging. 
+
 # PCB Fabrication
 
 The [Rx PCB Production](./Rx-PCB/production/) and [Tx PCB Production](./Tx-PCB/production/) folders contain the files needed to fabricate the PCBs. The same folders also contain the BOM information for the PCBs. 
