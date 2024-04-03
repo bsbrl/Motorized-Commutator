@@ -1,5 +1,9 @@
 # Computer vision guided open-source active commutator for neural imaging in freely behaving animals
 
+# PCB Fabrication
+
+The [Rx PCB Production](./Rx-PCB/production/) and [Tx PCB Production](./Tx-PCB/production/) folders contain the files needed to fabricate the PCBs. The same folders also contain the BOM information for the PCBs. 
+
 # CAD Files
 
 The [CAD](./CAD) folder contains the SolidWorks assembly files for the motorized commutator and the translating commutator. 
