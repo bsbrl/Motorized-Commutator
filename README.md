@@ -1,6 +1,6 @@
 # Computer vision guided open-source active commutator for neural imaging in freely behaving animals
 
-This repository contains the necessary software, CAD, and PCB fabrication files, and instructions needed to setup a CV guided open-source active commutator for neural imaging. 
+This repository contains the necessary software, CAD, and PCB fabrication files, and instructions needed to setup a CV guided open-source active commutator for neural imaging. The software files include the Python and Teensy codes for live tracking and cable tangling elimination. The CAD files are a combination of SolidWorks assembly files, SolidWorks part files, and step files.
 
 # PCB Fabrication
 
