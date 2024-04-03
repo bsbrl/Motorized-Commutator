@@ -1,4 +1,6 @@
-# CAD Files for the Computer vision guided open-source active commutator for neural imaging in freely behaving animals
+# Computer vision guided open-source active commutator for neural imaging in freely behaving animals
+
+# CAD Files
 
 The [CAD](./CAD) folder contains the SolidWorks assembly files for the motorized commutator and the translating commutator. 
 
