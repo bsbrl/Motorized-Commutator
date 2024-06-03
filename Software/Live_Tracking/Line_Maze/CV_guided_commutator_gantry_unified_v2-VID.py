@@ -1,5 +1,8 @@
 from Custom_Libraries.dlclive_commutator_gantry_unified_v2_VID import dlclive_commutator
 
+import os
+os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
+
 # Define global variables
 
 # DLC model path

@@ -1,0 +1,35 @@
+/* style.css */
+@import url("https://fonts.googleapis.com/css2?family=Manrope:wght@200..800&display=swap");
+
+body {
+    font-family: 'Manrope', sans-serif !important;
+    font-size: 32px;
+    font-weight: 800;
+    color: #ffffff;
+}
+
+label * {
+    font-family: 'Manrope', sans-serif !important;
+    font-size: 24px;
+    font-weight: lighter;
+    color: #ffffff;
+}
+
+div.st-emotion-cache-1xw8zd0 {
+    background-color: #272F2C;
+}
+
+button.st-emotion-cache-nbt3vv.ef3psqc13{
+    background-color: #177B2D;
+    border-width: 0;
+}
+
+div.st-emotion-cache-1r6slb0.e1f1d6gn3 {
+    position: inherit;
+    align-items: flex-baseline;
+}
+
+button {
+    background-color: #177B2D;
+    border-width: 0;
+}
