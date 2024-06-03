@@ -102,11 +102,6 @@ class dlclive_commutator():
         self.tailbase_x = np.array([])
         self.tailbase_y = np.array([])
 
-        self.lnut_x = np.array([])
-        self.lnut_y = np.array([])
-        self.rnut_x = np.array([])
-        self.rnut_y = np.array([])
-
     
     def init_mcu(self):
         
@@ -253,8 +248,6 @@ class dlclive_commutator():
         for segment in range(num_segments):
             segment_start = (segment * segment_width) + self.left_offset
             segment_end = ((segment + 1) * segment_width) + self.left_offset
-
-            # THERE IS A BOMBER IN THIS CONDITION BELOW!!
             if (segment_start - gap_width) <= mouse_x < (segment_end + gap_width):
                 print("Start: ", segment_start, ";  End: ", segment_end)
                 return segment + 1
@@ -448,11 +441,6 @@ class dlclive_commutator():
         self.tailbase_x = np.append(self.tailbase_x, self.tailbase[0])
         self.tailbase_y = np.append(self.tailbase_y, self.tailbase[1])
 
-        self.lnut_x = np.append(self.lnut_x, self.lnut[0])
-        self.lnut_y = np.append(self.lnut_y, self.lnut[1])
-        self.rnut_x = np.append(self.rnut_x, self.rnut[0])
-        self.rnut_y = np.append(self.rnut_y, self.rnut[1])
-
     def inference_data_saver(self):
         # Save files to disk
         debug_print(self.tracking_verbose, "\nSAVING INFERENCE DATA TO DISK ...")
@@ -463,6 +451,8 @@ class dlclive_commutator():
         # Create Pandas dataframe for rotations over time
         d1 = {'Inference Time': self.inference_time_logger,
                 'Frame Counter': self.frame_inferenced_counter,
+                'X Move': self.x_move_logger,
+                'Angle Move': self.angle_move_logger,
                 'Angle Data 1': self.angle_data_logger_1,
                 'Angle Data 2': self.angle_data_logger_2,
                 'X Data': self.translation_data_logger,
@@ -470,11 +460,7 @@ class dlclive_commutator():
                 'Meso x': self.meso_x,
                 'Meso y': self.meso_y,
                 'Tailbase x': self.tailbase_x,
-                'Tailbase y': self.tailbase_y,
-                'Lnut x': self.lnut_x,
-                'Lnut y': self.lnut_y,
-                'Rnut x': self.rnut_x,
-                'Rnut y': self.rnut_y}
+                'Tailbase y': self.tailbase_y}
         
         df1 = pd.DataFrame(d1)
         
@@ -485,32 +471,6 @@ class dlclive_commutator():
         # Draw a circle on the right nut
         radius = 10
         offset = self.video_width / (self.segment_count * 2)
-        # cv2.circle(frame, (int(self.lnut[0] + offset), int(self.video_height / 2)), radius,
-        #             (0, 255, 0), thickness=4)
-        
-        # # Draw a line from the left nut to the meso
-        # cv2.line(frame, (int(self.lnut[0] + offset), int(self.video_height / 2)),
-        #             (int(self.meso[0]), int(self.video_height / 2)), (255, 255, 255), 4)
-        
-        # cv2.circle(frame, (int(self.rnut[0] - offset), int(self.video_height / 2.2)), radius,
-        #             (0, 0, 255), thickness=4)
-        
-        # # Draw a line from the right nut to the meso
-        # cv2.line(frame, (int(self.rnut[0] - offset), int(self.video_height / 2.2)),
-        #             (int(self.meso[0]), int(self.video_height / 2)), (255, 0, 255), 4)
-        """
-        # Draw a circle on where the current mouse segment is
-        segment_draw = ((self.video_width / self.segment_count) * (self.segment_number - 1) + 
-                        (self.video_width / self.segment_count) * self.segment_number) / 2
-
-        cv2.circle(frame, (int(segment_draw), int(self.video_height / 2)), radius,
-                    (0, 255, 0), thickness=4)
-        
-        # Draw lines from the circle to the boundaries
-        cv2.line(frame, (int(segment_draw - offset), int(self.video_height / 2)),
-                    (int(segment_draw + offset), int(self.video_height / 2)), (255, 0, 255), 4)
-        
-        """
         
         segment_draw_offset = (((self.video_width - self.left_offset - self.right_offset) / self.segment_count) * (self.segment_number - 1) + 
                         ((self.video_width - self.left_offset - self.right_offset) / self.segment_count) * self.segment_number +
@@ -528,19 +488,12 @@ class dlclive_commutator():
     def draw_tracking_points_on_frame(self, frame):
         # Draw a circle on the right nut
         radius = 4
-        thickness = 6
         
         cv2.circle(frame, (int(self.meso[0]), int(self.meso[1])), radius,
-                    (255, 0, 0), thickness=thickness)
+                    (255, 0, 0), thickness=6)
         
         cv2.circle(frame, (int(self.tailbase[0]), int(self.tailbase[1])), radius,
-                    (255, 0, 255), thickness=thickness)
-        
-        cv2.circle(frame, (int(self.lnut[0]), int(self.lnut[1])), radius,
-                    (255, 0, 0), thickness=thickness)
-        
-        cv2.circle(frame, (int(self.rnut[0]), int(self.rnut[1])), radius,
-                    (255, 0, 255), thickness=thickness)
+                    (255, 0, 255), thickness=6)
 
         return frame
 
@@ -569,8 +522,8 @@ class dlclive_commutator():
 
         # If the image source is VID, you can set starting position
         if self.img_source_name == 'VID':
-            # frame_id = 30*15
-            self.img_source.set(cv2.CAP_PROP_POS_FRAMES, 0)
+            frame_id = 30*15
+            self.img_source.set(cv2.CAP_PROP_POS_FRAMES, frame_id)
 
             # DEBUGGING: Initialize video export file for modified frames
             # Create a video writer object to save the modified frames.
@@ -614,10 +567,7 @@ class dlclive_commutator():
         
         # while loop and counter < self.frames_to_read:
         # while self.img_source.isOpened() and counter < self.frames_to_read:
-        # while self.img_source.isOpened() and (((time.time() - timeStart) / 60) <= 3.0):
-        self.img_source.set(cv2.CAP_PROP_POS_FRAMES, 0)
-
-        while self.img_source.isOpened():
+        while self.img_source.isOpened() and (((time.time() - timeStart) / 60) <= 3.0):
 
             start_time = time.time()
             
@@ -626,10 +576,10 @@ class dlclive_commutator():
             
             # Reading next frame from the camera
             ret, frame = self.img_source.read()
-            # print("Result: ", ret)
+            # print("Result: ", result)
 
             # Read debug cam
-            # ret2, frame2 = self.img_source_2.read()
+            ret2, frame2 = self.img_source_2.read()
             
             # if frame is read correctly ret is True
             if not ret:
@@ -682,11 +632,6 @@ class dlclive_commutator():
                     self.v1 = [x, y]
                     # debug_print(self.tracking_verbose, "updated v1: " + str(self.v1))
                     
-                    # Check if there is a jump for invalid data
-                    jump_check_meso = radius_filter(previous_meso, self.meso[:2], self.point_filter_radius)
-                    jump_check_tailbase = radius_filter(previous_tailbase, self.tailbase[:2], self.point_filter_radius)
-                    jump_check = jump_check_meso and jump_check_tailbase
-                    
                     # Perform tracking if there is no jump
                     # self.tracking_mcu(frame)
                     self.tracking_mcu_segmented()
@@ -696,8 +641,7 @@ class dlclive_commutator():
 
                     if self.img_source_name == 'VID':
                         # Perform drawing
-                        # frame = self.draw_on_frame(frame)
-                        frame = self.draw_tracking_points_on_frame(frame)
+                        frame = self.draw_on_frame(frame)
 
                         # Write the modified frame to the output debug video.
                         debug_video.write(frame)
@@ -732,7 +676,6 @@ class dlclive_commutator():
             # Some delay to slow down GPU inference; comment out
             if self.inference_time < 0.165:
                 # time.sleep(self.sleep_time)
-                # round(self.inference_time, 3) -> VERY WRONG TIME VARIABLE TO USE
                 time_compensation = 0.165 - round(self.inference_time, 3)
                 time.sleep(time_compensation)
                 debug_print(self.tracking_verbose, "Total tracking time: " + str(time_compensation + self.inference_time))
@@ -746,7 +689,7 @@ class dlclive_commutator():
         
         # if self.img_source_name == 'VID':
         debug_video.release()
-        # debug_cam.release()
+        debug_cam.release()
 
         # Save data to disk
         self.inference_data_saver()
@@ -769,9 +712,9 @@ if __name__ == '__main__':
     # camera = True
     
     # if not camera:
-    #     poser = dlclive_commutator_video(model_path, video_topose, plot_donut=True, skip_frames=10, frames_to_read=250)
+    #     poser = dlclive_commutator(model_path, video_topose, plot_donut=True, skip_frames=10, frames_to_read=250)
     #     poser.start_posing()
     
     # else:
-    #     poser = dlclive_commutator_camera(model_path, camera_index=0, plot_donut=True, frames_to_read=10)
+    #     poser = dlclive_commutator(model_path, camera_index=0, plot_donut=True, frames_to_read=10)
     #     poser.start_posing()

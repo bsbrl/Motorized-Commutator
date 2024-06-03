@@ -26,7 +26,6 @@ class dlclive_commutator():
                  dlc_display=False):
         
         self.img_source = None
-        self.img_source_2 = None
         self.dlc_live = None
         self.mcu = None
         self.dlc_proc = None
@@ -357,17 +356,12 @@ class dlclive_commutator():
         if self.camera:
             self.img_source_name = "CAM"
 
-            # self.img_source = cv2.VideoCapture(self.camera_index)
+            self.img_source = cv2.VideoCapture(self.camera_index)
             self.img_source = cv2.VideoCapture(self.camera_index, cv2.CAP_DSHOW)
             self.img_source.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)             # 1920 | 960
             self.img_source.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)            # 1080 | 720
-
-            # self.img_source_2 = cv2.VideoCapture(self.camera_index + 1)
-            self.img_source_2 = cv2.VideoCapture(self.camera_index + 1, cv2.CAP_DSHOW)
-            self.img_source_2.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)             # 1920 | 960
-            self.img_source_2.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)            # 1080 | 720
             
-            if self.img_source is None or not self.img_source.isOpened() or self.img_source_2 is None or not self.img_source_2.isOpened():
+            if self.img_source is None or not self.img_source.isOpened():
                 raise Exception('Warning: unable to open image source: CAMERA ', self.camera_index)
         
             else:
@@ -439,7 +433,7 @@ class dlclive_commutator():
         self.meso_x = np.append(self.meso_x, self.meso[0])
         self.meso_y = np.append(self.meso_y, self.meso[1])
         self.tailbase_x = np.append(self.tailbase_x, self.tailbase[0])
-        self.tailbase_y = np.append(self.tailbase_y, self.tailbase[1])
+        self.tailbase_y = np.append(self.tailbase_x, self.tailbase[0])
 
     def inference_data_saver(self):
         # Save files to disk
@@ -471,33 +465,7 @@ class dlclive_commutator():
         # Draw a circle on the right nut
         radius = 10
         offset = self.video_width / (self.segment_count * 2)
-        # cv2.circle(frame, (int(self.lnut[0] + offset), int(self.video_height / 2)), radius,
-        #             (0, 255, 0), thickness=4)
-        
-        # # Draw a line from the left nut to the meso
-        # cv2.line(frame, (int(self.lnut[0] + offset), int(self.video_height / 2)),
-        #             (int(self.meso[0]), int(self.video_height / 2)), (255, 255, 255), 4)
-        
-        # cv2.circle(frame, (int(self.rnut[0] - offset), int(self.video_height / 2.2)), radius,
-        #             (0, 0, 255), thickness=4)
-        
-        # # Draw a line from the right nut to the meso
-        # cv2.line(frame, (int(self.rnut[0] - offset), int(self.video_height / 2.2)),
-        #             (int(self.meso[0]), int(self.video_height / 2)), (255, 0, 255), 4)
-        """
-        # Draw a circle on where the current mouse segment is
-        segment_draw = ((self.video_width / self.segment_count) * (self.segment_number - 1) + 
-                        (self.video_width / self.segment_count) * self.segment_number) / 2
-
-        cv2.circle(frame, (int(segment_draw), int(self.video_height / 2)), radius,
-                    (0, 255, 0), thickness=4)
-        
-        # Draw lines from the circle to the boundaries
-        cv2.line(frame, (int(segment_draw - offset), int(self.video_height / 2)),
-                    (int(segment_draw + offset), int(self.video_height / 2)), (255, 0, 255), 4)
-        
-        """
-        
+                
         segment_draw_offset = (((self.video_width - self.left_offset - self.right_offset) / self.segment_count) * (self.segment_number - 1) + 
                         ((self.video_width - self.left_offset - self.right_offset) / self.segment_count) * self.segment_number +
                         self.left_offset * 2) / 2
@@ -544,7 +512,6 @@ class dlclive_commutator():
         counter = 0
 
         debug_video = None
-        debug_cam = None
 
         # If the image source is VID, you can set starting position
         if self.img_source_name == 'VID':
@@ -561,11 +528,7 @@ class dlclive_commutator():
             # Create a video writer object to save the modified frames.
             # Get the current time
             current_time = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
-
             debug_video = cv2.VideoWriter("LIVE_VIDEO_" + current_time + ".mp4", cv2.VideoWriter_fourcc(*"mp4v"),
-									    6, (self.video_width, self.video_height))
-            
-            debug_cam = cv2.VideoWriter("LIVE_VIDEO_CAM2_" + current_time + ".mp4", cv2.VideoWriter_fourcc(*"mp4v"),
 									    6, (self.video_width, self.video_height))
             
         print("\nPress Enter to continue: ")
@@ -592,27 +555,21 @@ class dlclive_commutator():
         timeStart = time.time()
         
         # while loop and counter < self.frames_to_read:
-        # while self.img_source.isOpened() and counter < self.frames_to_read:
-        while self.img_source.isOpened() and (((time.time() - timeStart) / 60) <= 3.0):
+        while self.img_source.isOpened() and counter < self.frames_to_read:
 
-            start_time = time.time()
-            
             # Print counter to track frames tracked
             debug_print(self.tracking_verbose, "Counter: " + str(counter))
             
             # Reading next frame from the camera
             ret, frame = self.img_source.read()
             # print("Result: ", result)
-
-            # Read debug cam
-            ret2, frame2 = self.img_source_2.read()
             
             # if frame is read correctly ret is True
             if not ret:
                 debug_print(self.tracking_verbose, "Camera could not be found!")
                 break
             
-            # start_time = time.time()
+            start_time = time.time()
             
             # Get inference from an image
             img_pose = self.dlc_live.get_pose(frame)
@@ -657,44 +614,6 @@ class dlclive_commutator():
                     # Current frame's vector
                     self.v1 = [x, y]
                     # debug_print(self.tracking_verbose, "updated v1: " + str(self.v1))
-                    
-                    # Check if there is a jump for invalid data
-                    jump_check_meso = radius_filter(previous_meso, self.meso[:2], self.point_filter_radius)
-                    jump_check_tailbase = radius_filter(previous_tailbase, self.tailbase[:2], self.point_filter_radius)
-                    jump_check = jump_check_meso and jump_check_tailbase
-                    
-                    # # Perform tracking and mcu comms
-                    # if jump_check:
-                    #     # Perform tracking if there is no jump
-                    #     # self.tracking_mcu(frame)
-                    #     self.tracking_mcu_segmented()
-                        
-                    #     # Set previous vector to the new vector against next frame reading
-                    #     self.v0 = self.v1[:]
-
-                    #     if self.img_source_name == 'VID':
-                    #         # Perform drawing
-                    #         frame = self.draw_on_frame(frame)
-
-                    #         # Write the modified frame to the output debug video.
-                    #         debug_video.write(frame)
-                    #     else:
-                    #         # Draw tracking points on frame
-                    #         frame = self.draw_tracking_points_on_frame(frame)
-                            
-                    #         # Write the modified frame to the output debug video.
-                    #         debug_video.write(frame)
-
-                    #     # Log data
-                    #     self.total_time_logger = np.append(self.total_time_logger, time.time() - timeStart)
-                    #     self.inference_data_logger()
-                        
-                    #     previous_meso = self.meso[:2]
-                    #     previous_tailbase = self.tailbase[:2]
-                    
-                    # else:
-                    #     debug_print(self.tracking_verbose, "!!! DATA JUMP PROBLEM")
-                    #     self.points_filtered += 1
 
                     # Perform tracking if there is no jump
                     # self.tracking_mcu(frame)
@@ -715,7 +634,6 @@ class dlclive_commutator():
                         
                         # Write the modified frame to the output debug video.
                         debug_video.write(frame)
-                        debug_cam.write(frame2)
 
                     # Log data
                     self.total_time_logger = np.append(self.total_time_logger, time.time() - timeStart)
@@ -751,9 +669,8 @@ class dlclive_commutator():
         # Release image sources and video files
         self.img_source.release()
         
-        # if self.img_source_name == 'VID':
-        debug_video.release()
-        debug_cam.release()
+        if self.img_source_name == 'VID':
+            debug_video.release()
 
         # Save data to disk
         self.inference_data_saver()
@@ -776,9 +693,9 @@ if __name__ == '__main__':
     # camera = True
     
     # if not camera:
-    #     poser = dlclive_commutator_video(model_path, video_topose, plot_donut=True, skip_frames=10, frames_to_read=250)
+    #     poser = dlclive_commutator(model_path, video_topose, plot_donut=True, skip_frames=10, frames_to_read=250)
     #     poser.start_posing()
     
     # else:
-    #     poser = dlclive_commutator_camera(model_path, camera_index=0, plot_donut=True, frames_to_read=10)
+    #     poser = dlclive_commutator(model_path, camera_index=0, plot_donut=True, frames_to_read=10)
     #     poser.start_posing()
