@@ -3,14 +3,10 @@ from Custom_Libraries.apa_live_tracking_class import dlclive_commutator
 # Define global variables
 
 # DLC model path
-
-# dlc_config_modelpath = r"DLC_Model\kp-OCT-18-23-apa-resnet50"
-dlc_config_modelpath = r"DLC_Model\kp-OCT-18-23-bm-resnet50"
+dlc_config_modelpath = r"C:\Users\kapil\Documents\DLC\IBrahim DLC\APA_2point_commutator-Kapil-2023-03-14\exported-models\DLC_APA_2point_commutator_resnet_50_iteration-3_shuffle-1"
 
 # Video file path
-# video_file_name = r"Video\trim_1739_trial1-09112023113131-0000_115-221_sec.avi"
-# video_file_name = r"Video\Kapil_Video_Clipping_01.mp4"
-video_file_name = r"C:\Users\me-fausn002-admin\Downloads\APA_VIDS_DFF\trim_1739_d2_t1-05232023093343-0000_120-719.2595_sec.avi"
+video_file_name = r"C:\Users\kapil\Documents\DLC\IBrahim DLC\APA_2point_commutator-Kapil-2023-03-14\videos\Kapil Video Clipping_01.mp4"
 
 # Serial conection parameters
 selected_serial_port = "COM6"
@@ -21,9 +17,9 @@ connect_arduino = True
 # Camera and video
 camera_index = 1
 video_frame_to_skip = 0				# 3 to simulate 10 fps from 30 fps video
-camera = False
+camera = True
 tracking_fps = 10
-inference_duration = tracking_fps * 60 * 20 # In seconds
+inference_duration = 60 * 10      # In seconds
 
 	
 poser = dlclive_commutator(dlc_model_path=dlc_config_modelpath,
@@ -31,8 +27,8 @@ poser = dlclive_commutator(dlc_model_path=dlc_config_modelpath,
                             camera_index=camera_index,
                             video_path=video_file_name,
                             skip_frames=video_frame_to_skip,
-                            # COM_Port=selected_serial_port,
-                            # baudrate=baud_rate,
+                            COM_Port=selected_serial_port,
+                            baudrate=baud_rate,
 							inference_duration=inference_duration,
 							verbose=True,
                             dlc_display=True)

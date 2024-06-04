@@ -60,6 +60,9 @@ def vectorAngle_v2(v1, v2):
 	dot_product = v1[0] * v2[0] + v1[1] * v2[1]
 	magnitude_v1 = sqrt(v1[0] ** 2 + v1[1] ** 2)
 	magnitude_v2 = sqrt(v2[0] ** 2 + v2[1] ** 2)
+
+	# Debug print
+	print("Dot product: ", dot_product, " Mag v1: ", magnitude_v1, " Mag v2: ", magnitude_v2)
 	
 	cos_angle = dot_product / (magnitude_v1 * magnitude_v2)
 	# debug_print(True, "Cos angle: " + str(cos_angle))

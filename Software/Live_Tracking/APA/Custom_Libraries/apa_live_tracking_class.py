@@ -49,6 +49,7 @@ class dlclive_commutator():
         self.frame_counter = 0
         self.skipped_frame_counter = 0
         self.rotations = 0
+        self.commutation_status = 0
         
         self.angle_threshold = 90
         self.accuracy_threshold = 0.90
@@ -91,6 +92,8 @@ class dlclive_commutator():
         self.tailbase_x = np.array([])
         self.tailbase_y = np.array([])
 
+        self.commutation = np.array([])
+
     
     def init_mcu(self):
         
@@ -112,6 +115,7 @@ class dlclive_commutator():
         # self.frame_counter tracks the tacked/unskipped frames
         angle_move = 0		# IN STEPS
         self.angle_move_amount = 0
+        self.commutation_status = 0
 
         self.theta = vectorAngle_v2(self.v0, self.v1)
         debug_print(self.tracking_verbose, "\n*** Angle between the two vectors (degrees): " + str(np.rad2deg(self.theta)))
@@ -121,8 +125,8 @@ class dlclive_commutator():
 
         self.rolling_angles += np.rad2deg(self.theta)
 
-        self.angle_data_logger_1 = np.append(self.angle_data_logger_1, self.commutative_angle)
-        self.angle_data_logger_2 = np.append(self.angle_data_logger_2, self.rolling_angles)
+        # self.angle_data_logger_1 = np.append(self.angle_data_logger_1, self.commutative_angle)
+        # self.angle_data_logger_2 = np.append(self.angle_data_logger_2, self.rolling_angles)
 
         if abs(self.commutative_angle) >= self.angle_threshold:
             angle_move = int(self.commutative_angle)
@@ -132,6 +136,7 @@ class dlclive_commutator():
             # angle_move = int((angle_move * 200 * self.STEPSIZE) / 360.0)
 
             self.commutative_angle = 0
+            self.commutation_status = 1
 
         ###################### MCU COMMUNICATION ###########################################
         
@@ -145,9 +150,11 @@ class dlclive_commutator():
             res = write_read(mcu_write_value, self.mcu)
 
             debug_print(self.tracking_verbose, "MCU communication done ... \n")
-        
+
         elif (angle_move != 0):
-            mcu_write_value = str(self.segment_number) + ',' + str(angle_move)
+            # Generate value to write to MCU
+            mcu_write_value = str(angle_move) + '\n'
+
             debug_print(self.tracking_verbose, "MCU Write Value: " + str(mcu_write_value))
 
         ###################### UPDATE VARIABLES FOR STORAGE ###########################################
@@ -270,7 +277,12 @@ class dlclive_commutator():
         self.tailbase_y = np.append(self.tailbase_y, self.tailbase[1])
 
         self.total_time_logger = np.append(self.total_time_logger, (time.time() - timeStart))
-        self.inference_skipped_frame_counter = np.append(self.inference_skipped_frame_counter, self.frame_counter * frame_skipping)
+        self.inference_skipped_frame_counter = np.append(self.inference_skipped_frame_counter, self.skipped_frame_counter)
+
+        self.angle_data_logger_1 = np.append(self.angle_data_logger_1, self.commutative_angle)
+        self.angle_data_logger_2 = np.append(self.angle_data_logger_2, self.rolling_angles)
+
+        self.commutation = np.append(self.commutation, self.commutation_status)
 
 
     def inference_data_saver(self):
@@ -291,7 +303,8 @@ class dlclive_commutator():
               '\nMeso x:                    ', self.meso_x.shape,
               '\nMeso y:                    ', self.meso_y.shape,
               '\nTailbase x:                ', self.tailbase_x.shape,
-              '\nTailbase y:                ', self.tailbase_y.shape)
+              '\nTailbase y:                ', self.tailbase_y.shape,
+              '\nCommutation:               ', self.commutation.shape)
 
         # Create Pandas dataframe for rotations over time
         d1 = {'Inference Time': self.inference_time_logger,
@@ -304,7 +317,8 @@ class dlclive_commutator():
                 'Meso x': self.meso_x,
                 'Meso y': self.meso_y,
                 'Tailbase x': self.tailbase_x,
-                'Tailbase y': self.tailbase_y}
+                'Tailbase y': self.tailbase_y,
+                'Commutation': self.commutation}
         
         df1 = pd.DataFrame(d1)
         
@@ -375,7 +389,7 @@ class dlclive_commutator():
             current_time = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
             
             debug_video = cv2.VideoWriter("DEBUG_VIDEO_" + current_time + ".mp4", cv2.VideoWriter_fourcc(*"mp4v"),
-									    6, (self.video_width, self.video_height))
+									    self.tracking_fps, (self.video_width, self.video_height))
 
         else:
             # DEBUGGING: Initialize video export file for modified frames
@@ -384,7 +398,7 @@ class dlclive_commutator():
             current_time = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
 
             debug_video = cv2.VideoWriter("LIVE_VIDEO_" + current_time + ".mp4", cv2.VideoWriter_fourcc(*"mp4v"),
-									    6, (self.video_width, self.video_height))
+									    self.tracking_fps, (self.video_width, self.video_height))
             
         print("\nPress Enter to continue: ")
         input()  # The script will pause here until Enter is pressed
@@ -402,35 +416,30 @@ class dlclive_commutator():
         print("\nInitializing Pose Tracking ...\n")
 
         timeStart = time.time()
+        loop_counter = 0
 
-        while self.img_source.isOpened() and ((time.time() - start_time) <= self.inference_duration):
+        while self.img_source.isOpened() and ((time.time() - timeStart) <= self.inference_duration):
 
-            start_time = time.time()
+            loop_start_time = time.time()
             
             # Print counter to track frames tracked
+            debug_print(self.tracking_verbose, "Loop counter:  " + str(loop_counter))
             debug_print(self.tracking_verbose, "Frame counter: " + str(self.frame_counter))
             
             # Reading next frame from the camera
             ret, frame = self.img_source.read()
-            
-            # print("Result: ", ret)
-
-            # Read debug cam
-            # ret2, frame2 = self.img_source_2.read()
             
             # if frame is read correctly ret is True
             if not ret:
                 debug_print(self.tracking_verbose, "Camera could not be found!")
                 break
             
-            # start_time = time.time()
-            
             # Get inference from an image
             img_pose = self.dlc_live.get_pose(frame)
-            # print("Image Pose: ", img_pose)
+            print("Image Pose: ", img_pose)
             
             # Get duration
-            self.inference_time = time.time() - start_time
+            self.inference_time = time.time() - loop_start_time
             debug_print(self.verbose, "--- %s seconds ---" % self.inference_time)
             
             self.lnut = img_pose[0]
@@ -440,17 +449,13 @@ class dlclive_commutator():
             
             # Check for NANS
             datatype_rotate = check_datatype(self.meso, self.tailbase)
-            self.accuracy_threshold = 0.90
             rotate_accuracy = True if ((self.meso[2] > self.accuracy_threshold) and (self.tailbase[2] > self.accuracy_threshold)) else False
             
-            if rotate_accuracy:
+            if rotate_accuracy and datatype_rotate:
                 
                 # create vector pointing from meso to tailbase
                 x = self.tailbase[0] - self.meso[0]
                 y = self.tailbase[1] - self.meso[1]
-                
-                # Calculate the horizontal midpoint of the nuts
-                # mid_nut = (self.lnut[0] + self.rnut[0]) / 2
                 
                 if self.frame_counter == 0:
                     # First frame in the video
@@ -488,29 +493,35 @@ class dlclive_commutator():
                     previous_meso = self.meso[:2]
                     previous_tailbase = self.tailbase[:2]
 
+                # Increment frame counter variable every time a frame is read
+                self.frame_counter += 1
+
                 self.skipped_frame_counter = 0
             
             else:
                 debug_print(self.tracking_verbose, "!!! DATATYPE OR PROBABILITY PROBLEM")
                 self.skipped_frame_counter = 1
 
+            # Increment loop counter
+            loop_counter += 1
+
             # Log data
             self.inference_data_logger(timeStart, frame_skipping)
 
-            # Increment frame counter variable every time a frame is read
-            self.frame_counter += 1
-
             if self.img_source_name == 'VID':
                 # Simulate frame skipping
-                self.img_source.set(cv2.CAP_PROP_POS_FRAMES, self.frame_counter * frame_skipping)
+                self.img_source.set(cv2.CAP_PROP_POS_FRAMES, loop_counter * frame_skipping)
+
+            # Print duration of loop
+            debug_print(self.tracking_verbose, "Current duration: " + str(time.time() - timeStart) + " seconds.")
 
             # Some delay to slow down GPU inference
             # 0.165 for 6 FPS
             # 0.1   for 10 FPS
-            if self.inference_time < 0.1:
-                time_compensation = 0.165 - round((time.time() - start_time), 3)
+            if (time.time() - loop_start_time) < 0.1:
+                time_compensation = 0.1 - round((time.time() - loop_start_time), 3)
                 time.sleep(time_compensation)
-                debug_print(self.tracking_verbose, "Total tracking time: " + str(time_compensation + self.inference_time))
+                debug_print(self.tracking_verbose, "Total tracking time: " + str(time_compensation + self.inference_time) + "\n\n")
         
 
         # Give feedback once tracking is done
@@ -525,7 +536,7 @@ class dlclive_commutator():
         self.inference_data_saver()
         
         # Sleep for 5 seconds to display final results
-        time.sleep(5.0)
+        # time.sleep(5.0)
         
         # Close open figure
         plt.close()
