@@ -1,4 +1,4 @@
-from Custom_Libraries.dlclive_commutator_APA_VID_FULL_FRAMES import dlclive_commutator
+from Custom_Libraries.apa_live_tracking_class import dlclive_commutator
 
 # Define global variables
 
@@ -32,7 +32,6 @@ poser = dlclive_commutator(dlc_model_path=dlc_config_modelpath,
                             skip_frames=video_frame_to_skip,
                             # COM_Port=selected_serial_port,
                             # baudrate=baud_rate,
-							plot_donut=False,
 							frames_to_read=img_frames_to_read,
 							verbose=True,
                             dlc_display=True)

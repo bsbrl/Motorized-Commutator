@@ -20,9 +20,10 @@ connect_arduino = True
 
 # Camera and video
 camera_index = 1
-video_frame_to_skip = 0				# 10 to simulate 3 fps
+video_frame_to_skip = 0				# 3 to simulate 10 fps from 30 fps video
 camera = False
-img_frames_to_read = 6 * 60 * 20 # 60 * 5 # 6 * 15 | 30*60*2 | 1801 for 1 minute
+tracking_fps = 10
+inference_duration = tracking_fps * 60 * 20 # In seconds
 
 	
 poser = dlclive_commutator(dlc_model_path=dlc_config_modelpath,
@@ -32,7 +33,7 @@ poser = dlclive_commutator(dlc_model_path=dlc_config_modelpath,
                             skip_frames=video_frame_to_skip,
                             # COM_Port=selected_serial_port,
                             # baudrate=baud_rate,
-							frames_to_read=img_frames_to_read,
+							inference_duration=inference_duration,
 							verbose=True,
                             dlc_display=True)
 

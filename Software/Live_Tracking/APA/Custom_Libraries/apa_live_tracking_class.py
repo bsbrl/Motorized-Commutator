@@ -19,7 +19,7 @@ class dlclive_commutator():
                  skip_frames=0, 
                  COM_Port=None, 
                  baudrate=None, 
-                 frames_to_read=100, 
+                 inference_duration=100,    # In seconds
                  verbose=True,
                  dlc_display=False):
         
@@ -37,7 +37,7 @@ class dlclive_commutator():
         self.skip_frames = skip_frames
         self.COM_Port = COM_Port
         self.baudrate = baudrate
-        self.frames_to_read = frames_to_read
+        self.inference_duration = inference_duration
         self.verbose = verbose
         self.dlc_display = dlc_display
 
@@ -199,12 +199,7 @@ class dlclive_commutator():
             self.img_source.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)             # 1920 | 960
             self.img_source.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)            # 1080 | 720
 
-            # self.img_source_2 = cv2.VideoCapture(self.camera_index + 1)
-            self.img_source_2 = cv2.VideoCapture(self.camera_index + 1, cv2.CAP_DSHOW)
-            self.img_source_2.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)             # 1920 | 960
-            self.img_source_2.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)            # 1080 | 720
-            
-            if self.img_source is None or not self.img_source.isOpened() or self.img_source_2 is None or not self.img_source_2.isOpened():
+            if self.img_source is None or not self.img_source.isOpened():
                 raise Exception('Warning: unable to open image source: CAMERA ', self.camera_index)
         
             else:
@@ -261,7 +256,8 @@ class dlclive_commutator():
         # REFERENCE IMAGE RESOLUTION IS 1920 x 1080
         self.left_offset = int((400 / 1920) * self.video_width)      # GOTTEN FROM IMAGEJ | 350
         self.right_offset = int((150 / 1920) * self.video_width)     # GOTTEN FROM IMAGEJ | 270
-    
+
+  
     def inference_data_logger(self, timeStart, frame_skipping):
         # Log data
         self.inference_time_logger = np.append(self.inference_time_logger, self.inference_time)
@@ -275,6 +271,7 @@ class dlclive_commutator():
 
         self.total_time_logger = np.append(self.total_time_logger, (time.time() - timeStart))
         self.inference_skipped_frame_counter = np.append(self.inference_skipped_frame_counter, self.frame_counter * frame_skipping)
+
 
     def inference_data_saver(self):
         # Save files to disk
@@ -314,6 +311,7 @@ class dlclive_commutator():
         # Save dataframe to CSV
         df1.to_csv(f"INFERENCE_DATA_{current_time}.csv")
 
+
     def draw_on_frame(self, frame):
         # Draw a circle on the right nut
         radius = 10
@@ -331,7 +329,8 @@ class dlclive_commutator():
                     (int(segment_draw_offset + offset), int(self.video_height / 2.5)), (255, 0, 255), 4) 
 
         return frame
-    
+
+
     def draw_tracking_points_on_frame(self, frame):
         # Draw a circle on the right nut
         radius = 4
@@ -343,6 +342,7 @@ class dlclive_commutator():
                     (255, 0, 255), thickness=6)
 
         return frame
+
 
     def start_posing(self):
         
@@ -376,8 +376,6 @@ class dlclive_commutator():
             
             debug_video = cv2.VideoWriter("DEBUG_VIDEO_" + current_time + ".mp4", cv2.VideoWriter_fourcc(*"mp4v"),
 									    6, (self.video_width, self.video_height))
-            
-            loop_condition = self.img_source.isOpened()
 
         else:
             # DEBUGGING: Initialize video export file for modified frames
@@ -386,9 +384,6 @@ class dlclive_commutator():
             current_time = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
 
             debug_video = cv2.VideoWriter("LIVE_VIDEO_" + current_time + ".mp4", cv2.VideoWriter_fourcc(*"mp4v"),
-									    6, (self.video_width, self.video_height))
-            
-            debug_cam = cv2.VideoWriter("LIVE_VIDEO_CAM2_" + current_time + ".mp4", cv2.VideoWriter_fourcc(*"mp4v"),
 									    6, (self.video_width, self.video_height))
             
         print("\nPress Enter to continue: ")
@@ -408,7 +403,7 @@ class dlclive_commutator():
 
         timeStart = time.time()
 
-        while self.img_source.isOpened() and (self.frame_counter <= self.frames_to_read):
+        while self.img_source.isOpened() and ((time.time() - start_time) <= self.inference_duration):
 
             start_time = time.time()
             
@@ -489,7 +484,6 @@ class dlclive_commutator():
                         
                         # Write the modified frame to the output debug video.
                         debug_video.write(frame)
-                        # debug_cam.write(frame2)
 
                     previous_meso = self.meso[:2]
                     previous_tailbase = self.tailbase[:2]
@@ -525,11 +519,7 @@ class dlclive_commutator():
 
         # Release image sources and video files
         self.img_source.release()
-        
         debug_video.release()
-        
-        if self.img_source_name == 'CAM':
-            debug_cam.release()
 
         # Save data to disk
         self.inference_data_saver()
