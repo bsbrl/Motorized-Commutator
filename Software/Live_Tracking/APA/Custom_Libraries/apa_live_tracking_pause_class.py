@@ -8,6 +8,7 @@ import serial
 import pandas as pd
 import datetime
 import keyboard
+# from pynput import keyboard
 
 
 class dlclive_commutator():
@@ -446,7 +447,7 @@ class dlclive_commutator():
         loop_counter = 0
 
         while self.img_source.isOpened() and ((time.time() - timeStart) <= self.inference_duration) and self.running:
-                
+
             if not self.paused:
 
                 loop_start_time = time.time()
