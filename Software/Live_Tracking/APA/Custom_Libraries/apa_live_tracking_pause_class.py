@@ -129,7 +129,8 @@ class dlclive_commutator():
         self.angle_move_amount = 0
         self.commutation_status = 0
 
-        self.theta = vectorAngle_v2(self.v0, self.v1)
+        # self.theta = vectorAngle_v2(self.v0, self.v1)   # uncomment to change commutator rotation direction
+        self.theta = vectorAngle_v2(self.v1, self.v0)
         debug_print(self.tracking_verbose, "\n*** Angle between the two vectors (degrees): " + str(np.rad2deg(self.theta)))
         
         self.commutative_angle += np.rad2deg(self.theta)
@@ -375,6 +376,12 @@ class dlclive_commutator():
         self.paused = not self.paused
         debug_print(self.tracking_verbose, f"Paused: {self.paused}")
 
+        # Save data to disk everytime we pause
+        self.inference_data_saver()
+
+        # Reset frame counter
+        self.frame_counter = 0
+
     
     def stop_loop(self, event):
         # Function stops the loop
@@ -416,7 +423,7 @@ class dlclive_commutator():
             current_time = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
             
             debug_video = cv2.VideoWriter("DEBUG_VIDEO_" + current_time + ".mp4", cv2.VideoWriter_fourcc(*"mp4v"),
-									    self.tracking_fps, (self.video_width, self.video_height))
+									    self.tracking_fps, (int(self.video_width/3), int(self.video_height/3)))
 
         else:
             # DEBUGGING: Initialize video export file for modified frames
@@ -424,8 +431,8 @@ class dlclive_commutator():
             # Get the current time
             current_time = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
 
-            debug_video = cv2.VideoWriter("LIVE_VIDEO_" + current_time + ".mp4", cv2.VideoWriter_fourcc(*"mp4v"),
-									    self.tracking_fps, (self.video_width, self.video_height))
+            # debug_video = cv2.VideoWriter("LIVE_VIDEO_" + current_time + ".mp4", cv2.VideoWriter_fourcc(*"mp4v"),
+			# 						    self.tracking_fps, (int(self.video_width/3), int(self.video_height/3)))
             
         print("\nPress Enter to continue: ")
         input()  # The script will pause here until Enter is pressed
@@ -511,14 +518,15 @@ class dlclive_commutator():
                             frame = self.draw_tracking_points_on_frame(frame)
 
                             # Write the modified frame to the output debug video.
-                            debug_video.write(frame)
+                            debug_video.write(cv2.resize(frame, (int(self.video_width/3), int(self.video_height/3))))
 
                         else:
                             # Uncomment to draw tracking points on exported video frames
                             # frame = self.draw_tracking_points_on_frame(frame)
                             
                             # Write the modified frame to the output debug video.
-                            debug_video.write(frame)
+                            # debug_video.write(cv2.resize(frame, (int(self.video_width/3), int(self.video_height/3))))
+                            print(" ")
 
                         previous_meso = self.meso[:2]
                         previous_tailbase = self.tailbase[:2]
@@ -564,7 +572,9 @@ class dlclive_commutator():
 
         # Release image sources and video files
         self.img_source.release()
-        debug_video.release()
+        
+        if self.img_source_name == 'VID':
+            debug_video.release()
 
         # Save data to disk
         self.inference_data_saver()
