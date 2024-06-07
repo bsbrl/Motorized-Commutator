@@ -452,12 +452,12 @@ class dlclive_commutator():
                 debug_print(self.tracking_verbose, "Loop counter:  " + str(loop_counter))
                 debug_print(self.tracking_verbose, "Frame counter: " + str(self.frame_counter))
 
-                temp_time = time.time()
+                # temp_time = time.time()
 
                 # Reading next frame from the camera
                 ret, frame = self.img_source.read()
 
-                print(time.time() - temp_time)
+                # print(time.time() - temp_time)
                 # print("Image acquisition speed (seconds): ",  time.time() - temp_time)
                 
                 # if frame is read correctly ret is True
@@ -467,7 +467,7 @@ class dlclive_commutator():
                 
                 # Get inference from an image
                 img_pose = self.dlc_live.get_pose(frame)
-                print("Image Pose: ", img_pose)
+                # print("Image Pose: ", img_pose)
                 
                 # Get duration
                 self.inference_time = time.time() - loop_start_time
