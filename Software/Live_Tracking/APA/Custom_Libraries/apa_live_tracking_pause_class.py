@@ -63,12 +63,6 @@ class dlclive_commutator():
         # Flags to control the loop and pause state
         self.running = True
         self.paused = False
-
-        # # Set up the keyboard event listener
-        # keyboard.on_press_key("p", self.toggle_pause)  # 'p' key to pause/resume
-
-        # # Set up the keyboard event listener for stopping the loop
-        # keyboard.on_press_key("q", self.stop_loop)  # 'q' key to stop the loop
         
         self.v0 = [0, 0]
         self.v1 = [0, 0]
@@ -216,8 +210,8 @@ class dlclive_commutator():
 
             # self.img_source = cv2.VideoCapture(self.camera_index)
             self.img_source = cv2.VideoCapture(self.camera_index, cv2.CAP_DSHOW)
-            self.img_source.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)             # 1920 | 960
-            self.img_source.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)            # 1080 | 720
+            self.img_source.set(cv2.CAP_PROP_FRAME_WIDTH, 960)             # 1920 | 960
+            self.img_source.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)            # 1080 | 720
 
             if self.img_source is None or not self.img_source.isOpened():
                 raise Exception('Warning: unable to open image source: CAMERA ', self.camera_index)
@@ -271,11 +265,6 @@ class dlclive_commutator():
                 print(" ")
                 
             print("Video Capture Initialized.\n")
-
-        # ARENA DEPENDENT OFFSETS
-        # REFERENCE IMAGE RESOLUTION IS 1920 x 1080
-        self.left_offset = int((400 / 1920) * self.video_width)      # GOTTEN FROM IMAGEJ | 350
-        self.right_offset = int((150 / 1920) * self.video_width)     # GOTTEN FROM IMAGEJ | 270
 
   
     def inference_data_logger(self, timeStart, frame_skipping):
@@ -339,25 +328,6 @@ class dlclive_commutator():
         df1.to_csv(f"INFERENCE_DATA_{current_time}.csv")
 
 
-    def draw_on_frame(self, frame):
-        # Draw a circle on the right nut
-        radius = 10
-        offset = self.video_width / (self.segment_count * 2)
-        
-        segment_draw_offset = (((self.video_width - self.left_offset - self.right_offset) / self.segment_count) * (self.segment_number - 1) + 
-                        ((self.video_width - self.left_offset - self.right_offset) / self.segment_count) * self.segment_number +
-                        self.left_offset * 2) / 2
-        
-        cv2.circle(frame, (int(segment_draw_offset), int(self.video_height / 2.5)), radius,
-                    (255, 0, 0), thickness=4)
-        
-        # Draw lines from the circle to the boundaries
-        cv2.line(frame, (int(segment_draw_offset - offset), int(self.video_height / 2.5)),
-                    (int(segment_draw_offset + offset), int(self.video_height / 2.5)), (255, 0, 255), 4) 
-
-        return frame
-
-
     def draw_tracking_points_on_frame(self, frame):
         # Draw a circle on the right nut
         radius = 4
@@ -391,10 +361,10 @@ class dlclive_commutator():
     def start_posing(self):
 
         # Set up the keyboard event listener
-        keyboard.on_press_key("p", self.toggle_pause)  # 'p' key to pause/resume
+        keyboard.on_press_key("Home", self.toggle_pause)  # 'Home' key to pause/resume
 
         # Set up the keyboard event listener for stopping the loop
-        keyboard.on_press_key("q", self.stop_loop)  # 'q' key to stop the loop
+        keyboard.on_press_key("End", self.stop_loop)  # 'End' key to stop the loop
         
         # CALL INITIALIZATION FUNCTIONS
         
@@ -433,7 +403,10 @@ class dlclive_commutator():
 
             # debug_video = cv2.VideoWriter("LIVE_VIDEO_" + current_time + ".mp4", cv2.VideoWriter_fourcc(*"mp4v"),
 			# 						    self.tracking_fps, (int(self.video_width/3), int(self.video_height/3)))
-            
+
+            # Set buffer size
+            self.img_source.set(cv2.CAP_PROP_BUFFERSIZE, 10)
+        
         print("\nPress Enter to continue: ")
         input()  # The script will pause here until Enter is pressed
         
@@ -448,7 +421,7 @@ class dlclive_commutator():
         self.dlc_live.init_inference(frame)
 
         print("\nInitializing Pose Tracking ...\n")
-        print("\nPress 'p' to pause/resume, 'q' to quit.\n")
+        print("\nPress 'Home' to pause/resume, 'End' to quit.\n")
 
         timeStart = time.time()
         loop_counter = 0
@@ -462,9 +435,14 @@ class dlclive_commutator():
                 # Print counter to track frames tracked
                 debug_print(self.tracking_verbose, "Loop counter:  " + str(loop_counter))
                 debug_print(self.tracking_verbose, "Frame counter: " + str(self.frame_counter))
-                
+
+                temp_time = time.time()
+
                 # Reading next frame from the camera
                 ret, frame = self.img_source.read()
+
+                print(time.time() - temp_time)
+                # print("Image acquisition speed (seconds): ",  time.time() - temp_time)
                 
                 # if frame is read correctly ret is True
                 if not ret:
@@ -580,7 +558,7 @@ class dlclive_commutator():
         self.inference_data_saver()
         
         # Sleep for 5 seconds to display final results
-        # time.sleep(5.0)
+        time.sleep(5.0)
         
         # Close open figure
         plt.close()
