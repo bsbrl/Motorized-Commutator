@@ -95,8 +95,11 @@ class dlclive_commutator():
 
         self.meso_x = np.array([])
         self.meso_y = np.array([])
+        self.meso_accuracy = np.array([])
+
         self.tailbase_x = np.array([])
         self.tailbase_y = np.array([])
+        self.tailbase_accuracy = np.array([])
 
         self.commutation = np.array([])
 
@@ -268,6 +271,12 @@ class dlclive_commutator():
 
   
     def inference_data_logger(self, timeStart, frame_skipping):
+        if self.paused:
+            self.frame_counter = 0
+            self.meso = [0, 0, 0]
+            self.tailbase = [0, 0, 0]
+
+
         # Log data
         self.inference_time_logger = np.append(self.inference_time_logger, self.inference_time)
         self.frame_inferenced_counter = np.append(self.frame_inferenced_counter, self.frame_counter)
@@ -275,8 +284,11 @@ class dlclive_commutator():
         
         self.meso_x = np.append(self.meso_x, self.meso[0])
         self.meso_y = np.append(self.meso_y, self.meso[1])
+        self.meso_accuracy = np.append(self.meso_accuracy, self.meso[2])
+
         self.tailbase_x = np.append(self.tailbase_x, self.tailbase[0])
         self.tailbase_y = np.append(self.tailbase_y, self.tailbase[1])
+        self.tailbase_accuracy = np.append(self.tailbase_accuracy, self.tailbase[2])
 
         self.total_time_logger = np.append(self.total_time_logger, (time.time() - timeStart))
         self.inference_skipped_frame_counter = np.append(self.inference_skipped_frame_counter, self.skipped_frame_counter)
@@ -304,8 +316,10 @@ class dlclive_commutator():
               '\nTotal Time:                ', self.total_time_logger.shape,
               '\nMeso x:                    ', self.meso_x.shape,
               '\nMeso y:                    ', self.meso_y.shape,
+              '\nMeso accuracy:             ', self.meso_accuracy.shape,
               '\nTailbase x:                ', self.tailbase_x.shape,
               '\nTailbase y:                ', self.tailbase_y.shape,
+              '\nTailbase accuracy:         ', self.tailbase_accuracy.shape,
               '\nCommutation:               ', self.commutation.shape)
 
         # Create Pandas dataframe for rotations over time
@@ -318,8 +332,10 @@ class dlclive_commutator():
                 'Total Time': self.total_time_logger,
                 'Meso x': self.meso_x,
                 'Meso y': self.meso_y,
+                'Meso accuracy': self.meso_accuracy,
                 'Tailbase x': self.tailbase_x,
                 'Tailbase y': self.tailbase_y,
+                'Tailbase accuracy': self.tailbase_accuracy,
                 'Commutation': self.commutation}
         
         df1 = pd.DataFrame(d1)
