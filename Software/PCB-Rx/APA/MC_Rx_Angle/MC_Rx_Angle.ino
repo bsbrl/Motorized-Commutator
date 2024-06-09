@@ -224,6 +224,11 @@ void loop() {
       // Serial.println(steps);
       // Serial.println("");
 
+      // Add to the distanceToGo() steps
+      // distanceToGo(): the distance from the current position to the target position in steps
+      // Positive is clockwise from the current position
+      steps += myStepper.distanceToGo();
+
       // Set a new target position
       myStepper.move(steps);
       myStepper.runToPosition();
