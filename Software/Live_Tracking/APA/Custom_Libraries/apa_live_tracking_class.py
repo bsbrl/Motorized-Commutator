@@ -8,6 +8,7 @@ import serial
 import pandas as pd
 import datetime
 import keyboard
+import math
 # from pynput import keyboard
 
 
@@ -71,6 +72,7 @@ class dlclive_commutator():
         self.meso = []
         self.tailbase = []
         self.angle_move_amount = 0
+        self.angle_move_residual = 0
         # self.STEPSIZE = 1             # Based on mcu-stepper configuration
         
         self.img_source_name = None
@@ -139,8 +141,16 @@ class dlclive_commutator():
         # self.angle_data_logger_2 = np.append(self.angle_data_logger_2, self.rolling_angles)
 
         if abs(self.commutative_angle) >= self.angle_threshold:
-            angle_move = int(self.commutative_angle)
+            # Convert commutative angle to integer and save the residual part
+            # angle_move = int(self.commutative_angle)
+            residual, angle_move = math.modf(self.commutative_angle)
+            self.angle_move_residual += residual
             self.angle_move_amount = angle_move
+            
+            if abs(self.angle_move_residual) >= 10:
+                residual, self.angle_move_residual = math.modf(self.angle_move_residual)
+                self.angle_move_amount += self.angle_move_residual
+                self.angle_move_residual = residual
 
             # CONVERT ANGLE MOVE TO STEPS:
             # angle_move = int((angle_move * 200 * self.STEPSIZE) / 360.0)
