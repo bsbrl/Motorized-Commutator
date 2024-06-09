@@ -94,6 +94,7 @@ class dlclive_commutator():
         self.translation_data_logger =np.array([])
         self.angle_data_logger_1 = np.array([])
         self.angle_data_logger_2 = np.array([])
+        self.angle_residual_logger = np.array([])
 
         self.meso_x = np.array([])
         self.meso_y = np.array([])
@@ -305,6 +306,7 @@ class dlclive_commutator():
 
         self.angle_data_logger_1 = np.append(self.angle_data_logger_1, self.commutative_angle)
         self.angle_data_logger_2 = np.append(self.angle_data_logger_2, self.rolling_angles)
+        self.angle_residual_logger = np.append(self.angle_residual_logger, self.angle_move_residual)
 
         self.commutation = np.append(self.commutation, self.commutation_status)
 
@@ -323,6 +325,7 @@ class dlclive_commutator():
               '\nAngle Move:                ', self.angle_move_logger.shape,
               '\nAngle Data 1:              ', self.angle_data_logger_1.shape,
               '\nAngle Data 2:              ', self.angle_data_logger_2.shape,
+              '\nResidual angle:            ', self.angle_residual_logger.shape,
               '\nTotal Time:                ', self.total_time_logger.shape,
               '\nMeso x:                    ', self.meso_x.shape,
               '\nMeso y:                    ', self.meso_y.shape,
@@ -339,6 +342,7 @@ class dlclive_commutator():
                 'Angle Move': self.angle_move_logger,
                 'Angle Data 1': self.angle_data_logger_1,
                 'Angle Data 2': self.angle_data_logger_2,
+                'Residual angle': self.angle_residual_logger,
                 'Total Time': self.total_time_logger,
                 'Meso x': self.meso_x,
                 'Meso y': self.meso_y,
