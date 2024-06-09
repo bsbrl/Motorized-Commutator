@@ -7,6 +7,8 @@ import matplotlib.pyplot as plt
 import serial
 import pandas as pd
 import datetime
+import keyboard
+# from pynput import keyboard
 
 
 class dlclive_commutator():
@@ -57,6 +59,10 @@ class dlclive_commutator():
         self.tracking_period = 0.1          # In seconds
         # self.point_filter_radius = 100
         # self.points_filtered = 0
+
+        # Flags to control the loop and pause state
+        self.running = True
+        self.paused = False
         
         self.v0 = [0, 0]
         self.v1 = [0, 0]
@@ -89,8 +95,11 @@ class dlclive_commutator():
 
         self.meso_x = np.array([])
         self.meso_y = np.array([])
+        self.meso_accuracy = np.array([])
+
         self.tailbase_x = np.array([])
         self.tailbase_y = np.array([])
+        self.tailbase_accuracy = np.array([])
 
         self.commutation = np.array([])
 
@@ -117,7 +126,8 @@ class dlclive_commutator():
         self.angle_move_amount = 0
         self.commutation_status = 0
 
-        self.theta = vectorAngle_v2(self.v0, self.v1)
+        # self.theta = vectorAngle_v2(self.v0, self.v1)   # uncomment to change commutator rotation direction
+        self.theta = vectorAngle_v2(self.v1, self.v0)
         debug_print(self.tracking_verbose, "\n*** Angle between the two vectors (degrees): " + str(np.rad2deg(self.theta)))
         
         self.commutative_angle += np.rad2deg(self.theta)
@@ -203,8 +213,8 @@ class dlclive_commutator():
 
             # self.img_source = cv2.VideoCapture(self.camera_index)
             self.img_source = cv2.VideoCapture(self.camera_index, cv2.CAP_DSHOW)
-            self.img_source.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)             # 1920 | 960
-            self.img_source.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)            # 1080 | 720
+            self.img_source.set(cv2.CAP_PROP_FRAME_WIDTH, 960)             # 1920 | 960
+            self.img_source.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)            # 1080 | 720
 
             if self.img_source is None or not self.img_source.isOpened():
                 raise Exception('Warning: unable to open image source: CAMERA ', self.camera_index)
@@ -259,13 +269,14 @@ class dlclive_commutator():
                 
             print("Video Capture Initialized.\n")
 
-        # ARENA DEPENDENT OFFSETS
-        # REFERENCE IMAGE RESOLUTION IS 1920 x 1080
-        self.left_offset = int((400 / 1920) * self.video_width)      # GOTTEN FROM IMAGEJ | 350
-        self.right_offset = int((150 / 1920) * self.video_width)     # GOTTEN FROM IMAGEJ | 270
-
   
     def inference_data_logger(self, timeStart, frame_skipping):
+        if self.paused:
+            self.frame_counter = 0
+            self.meso = [0, 0, 0]
+            self.tailbase = [0, 0, 0]
+
+
         # Log data
         self.inference_time_logger = np.append(self.inference_time_logger, self.inference_time)
         self.frame_inferenced_counter = np.append(self.frame_inferenced_counter, self.frame_counter)
@@ -273,8 +284,11 @@ class dlclive_commutator():
         
         self.meso_x = np.append(self.meso_x, self.meso[0])
         self.meso_y = np.append(self.meso_y, self.meso[1])
+        self.meso_accuracy = np.append(self.meso_accuracy, self.meso[2])
+
         self.tailbase_x = np.append(self.tailbase_x, self.tailbase[0])
         self.tailbase_y = np.append(self.tailbase_y, self.tailbase[1])
+        self.tailbase_accuracy = np.append(self.tailbase_accuracy, self.tailbase[2])
 
         self.total_time_logger = np.append(self.total_time_logger, (time.time() - timeStart))
         self.inference_skipped_frame_counter = np.append(self.inference_skipped_frame_counter, self.skipped_frame_counter)
@@ -302,8 +316,10 @@ class dlclive_commutator():
               '\nTotal Time:                ', self.total_time_logger.shape,
               '\nMeso x:                    ', self.meso_x.shape,
               '\nMeso y:                    ', self.meso_y.shape,
+              '\nMeso accuracy:             ', self.meso_accuracy.shape,
               '\nTailbase x:                ', self.tailbase_x.shape,
               '\nTailbase y:                ', self.tailbase_y.shape,
+              '\nTailbase accuracy:         ', self.tailbase_accuracy.shape,
               '\nCommutation:               ', self.commutation.shape)
 
         # Create Pandas dataframe for rotations over time
@@ -316,33 +332,16 @@ class dlclive_commutator():
                 'Total Time': self.total_time_logger,
                 'Meso x': self.meso_x,
                 'Meso y': self.meso_y,
+                'Meso accuracy': self.meso_accuracy,
                 'Tailbase x': self.tailbase_x,
                 'Tailbase y': self.tailbase_y,
+                'Tailbase accuracy': self.tailbase_accuracy,
                 'Commutation': self.commutation}
         
         df1 = pd.DataFrame(d1)
         
         # Save dataframe to CSV
         df1.to_csv(f"INFERENCE_DATA_{current_time}.csv")
-
-
-    def draw_on_frame(self, frame):
-        # Draw a circle on the right nut
-        radius = 10
-        offset = self.video_width / (self.segment_count * 2)
-        
-        segment_draw_offset = (((self.video_width - self.left_offset - self.right_offset) / self.segment_count) * (self.segment_number - 1) + 
-                        ((self.video_width - self.left_offset - self.right_offset) / self.segment_count) * self.segment_number +
-                        self.left_offset * 2) / 2
-        
-        cv2.circle(frame, (int(segment_draw_offset), int(self.video_height / 2.5)), radius,
-                    (255, 0, 0), thickness=4)
-        
-        # Draw lines from the circle to the boundaries
-        cv2.line(frame, (int(segment_draw_offset - offset), int(self.video_height / 2.5)),
-                    (int(segment_draw_offset + offset), int(self.video_height / 2.5)), (255, 0, 255), 4) 
-
-        return frame
 
 
     def draw_tracking_points_on_frame(self, frame):
@@ -356,9 +355,32 @@ class dlclive_commutator():
                     (255, 0, 255), thickness=6)
 
         return frame
+    
+
+    def toggle_pause(self, event):
+        # Function toggles the pause state
+        self.paused = not self.paused
+        debug_print(self.tracking_verbose, f"Paused: {self.paused}")
+
+        # Save data to disk everytime we pause
+        self.inference_data_saver()
+
+        # Reset frame counter
+        self.frame_counter = 0
+
+    
+    def stop_loop(self, event):
+        # Function stops the loop
+        self.running = False
 
 
     def start_posing(self):
+
+        # Set up the keyboard event listener
+        keyboard.on_press_key("Home", self.toggle_pause)  # 'Home' key to pause/resume
+
+        # Set up the keyboard event listener for stopping the loop
+        keyboard.on_press_key("End", self.stop_loop)  # 'End' key to stop the loop
         
         # CALL INITIALIZATION FUNCTIONS
         
@@ -375,9 +397,7 @@ class dlclive_commutator():
         
         # DEFINE VARIABLES FOR POSE COMPUTATION
         frame_skipping = (self.video_fps / self.tracking_fps)       # Used for video simulation
-        loop_condition = None       # Determines when while loop ends
         debug_video = None
-        debug_cam = None
 
         # If the image source is VID, you can set starting position
         if self.img_source_name == 'VID':
@@ -389,7 +409,7 @@ class dlclive_commutator():
             current_time = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
             
             debug_video = cv2.VideoWriter("DEBUG_VIDEO_" + current_time + ".mp4", cv2.VideoWriter_fourcc(*"mp4v"),
-									    self.tracking_fps, (self.video_width, self.video_height))
+									    self.tracking_fps, (int(self.video_width/3), int(self.video_height/3)))
 
         else:
             # DEBUGGING: Initialize video export file for modified frames
@@ -397,9 +417,12 @@ class dlclive_commutator():
             # Get the current time
             current_time = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
 
-            debug_video = cv2.VideoWriter("LIVE_VIDEO_" + current_time + ".mp4", cv2.VideoWriter_fourcc(*"mp4v"),
-									    self.tracking_fps, (self.video_width, self.video_height))
-            
+            # debug_video = cv2.VideoWriter("LIVE_VIDEO_" + current_time + ".mp4", cv2.VideoWriter_fourcc(*"mp4v"),
+			# 						    self.tracking_fps, (int(self.video_width/3), int(self.video_height/3)))
+
+            # Set buffer size
+            self.img_source.set(cv2.CAP_PROP_BUFFERSIZE, 10)
+        
         print("\nPress Enter to continue: ")
         input()  # The script will pause here until Enter is pressed
         
@@ -414,114 +437,127 @@ class dlclive_commutator():
         self.dlc_live.init_inference(frame)
 
         print("\nInitializing Pose Tracking ...\n")
+        print("\nPress 'Home' to pause/resume, 'End' to quit.\n")
 
         timeStart = time.time()
         loop_counter = 0
 
-        while self.img_source.isOpened() and ((time.time() - timeStart) <= self.inference_duration):
+        while self.img_source.isOpened() and ((time.time() - timeStart) <= self.inference_duration) and self.running:
 
-            loop_start_time = time.time()
-            
-            # Print counter to track frames tracked
-            debug_print(self.tracking_verbose, "Loop counter:  " + str(loop_counter))
-            debug_print(self.tracking_verbose, "Frame counter: " + str(self.frame_counter))
-            
-            # Reading next frame from the camera
-            ret, frame = self.img_source.read()
-            
-            # if frame is read correctly ret is True
-            if not ret:
-                debug_print(self.tracking_verbose, "Camera could not be found!")
-                break
-            
-            # Get inference from an image
-            img_pose = self.dlc_live.get_pose(frame)
-            print("Image Pose: ", img_pose)
-            
-            # Get duration
-            self.inference_time = time.time() - loop_start_time
-            debug_print(self.verbose, "--- %s seconds ---" % self.inference_time)
-            
-            self.lnut = img_pose[0]
-            self.rnut = img_pose[1]
-            self.meso = img_pose[0]
-            self.tailbase = img_pose[1]
-            
-            # Check for NANS
-            datatype_rotate = check_datatype(self.meso, self.tailbase)
-            rotate_accuracy = True if ((self.meso[2] > self.accuracy_threshold) and (self.tailbase[2] > self.accuracy_threshold)) else False
-            
-            if rotate_accuracy and datatype_rotate:
+            if not self.paused:
+
+                loop_start_time = time.time()
                 
-                # create vector pointing from meso to tailbase
-                x = self.tailbase[0] - self.meso[0]
-                y = self.tailbase[1] - self.meso[1]
+                # Print counter to track frames tracked
+                debug_print(self.tracking_verbose, "Loop counter:  " + str(loop_counter))
+                debug_print(self.tracking_verbose, "Frame counter: " + str(self.frame_counter))
+
+                # temp_time = time.time()
+
+                # Reading next frame from the camera
+                ret, frame = self.img_source.read()
+
+                # print(time.time() - temp_time)
+                # print("Image acquisition speed (seconds): ",  time.time() - temp_time)
                 
-                if self.frame_counter == 0:
-                    # First frame in the video
-                    self.v0 = [x, y]
-                    # debug_print(self.tracking_verbose, "updated v0: " + str(self.v0))
+                # if frame is read correctly ret is True
+                if not ret:
+                    debug_print(self.tracking_verbose, "Camera could not be found!")
+                    break
+                
+                # Get inference from an image
+                img_pose = self.dlc_live.get_pose(frame)
+                # print("Image Pose: ", img_pose)
+                
+                # Get duration
+                self.inference_time = time.time() - loop_start_time
+                debug_print(self.verbose, "--- %s seconds ---" % self.inference_time)
+                
+                self.lnut = img_pose[0]
+                self.rnut = img_pose[1]
+                self.meso = img_pose[0]
+                self.tailbase = img_pose[1]
+                
+                # Check for NANS
+                datatype_rotate = check_datatype(self.meso, self.tailbase)
+                rotate_accuracy = True if ((self.meso[2] > self.accuracy_threshold) and (self.tailbase[2] > self.accuracy_threshold)) else False
+                
+                if rotate_accuracy and datatype_rotate:
                     
-                    previous_meso = self.meso[:2]
-                    previous_tailbase = self.tailbase[:2]
+                    # create vector pointing from meso to tailbase
+                    x = self.tailbase[0] - self.meso[0]
+                    y = self.tailbase[1] - self.meso[1]
+                    
+                    if self.frame_counter == 0:
+                        # First frame in the video
+                        self.v0 = [x, y]
+                        # debug_print(self.tracking_verbose, "updated v0: " + str(self.v0))
+                        
+                        previous_meso = self.meso[:2]
+                        previous_tailbase = self.tailbase[:2]
+                    
+                    else:
+                        # Current frame's vector
+                        self.v1 = [x, y]
+                        # debug_print(self.tracking_verbose, "updated v1: " + str(self.v1))
+                        
+                        self.tracking_mcu()
+                        
+                        # Set previous vector to the new vector against next frame reading
+                        self.v0 = self.v1[:]
+
+                        if self.img_source_name == 'VID':
+                            # Perform drawing
+                            # frame = self.draw_on_frame(frame)
+                            frame = self.draw_tracking_points_on_frame(frame)
+
+                            # Write the modified frame to the output debug video.
+                            debug_video.write(cv2.resize(frame, (int(self.video_width/3), int(self.video_height/3))))
+
+                        else:
+                            # Uncomment to draw tracking points on exported video frames
+                            # frame = self.draw_tracking_points_on_frame(frame)
+                            
+                            # Write the modified frame to the output debug video.
+                            # debug_video.write(cv2.resize(frame, (int(self.video_width/3), int(self.video_height/3))))
+                            print(" ")
+
+                        previous_meso = self.meso[:2]
+                        previous_tailbase = self.tailbase[:2]
+
+                    # Increment frame counter variable every time a frame is read
+                    self.frame_counter += 1
+
+                    self.skipped_frame_counter = 0
                 
                 else:
-                    # Current frame's vector
-                    self.v1 = [x, y]
-                    # debug_print(self.tracking_verbose, "updated v1: " + str(self.v1))
-                    
-                    self.tracking_mcu()
-                    
-                    # Set previous vector to the new vector against next frame reading
-                    self.v0 = self.v1[:]
+                    debug_print(self.tracking_verbose, "!!! DATATYPE OR PROBABILITY PROBLEM")
+                    self.skipped_frame_counter = 1
 
-                    if self.img_source_name == 'VID':
-                        # Perform drawing
-                        # frame = self.draw_on_frame(frame)
-                        frame = self.draw_tracking_points_on_frame(frame)
+                # Increment loop counter
+                loop_counter += 1
 
-                        # Write the modified frame to the output debug video.
-                        debug_video.write(frame)
+                # Log data
+                self.inference_data_logger(timeStart, frame_skipping)
 
-                    else:
-                        # Uncomment to draw tracking points on exported video frames
-                        # frame = self.draw_tracking_points_on_frame(frame)
-                        
-                        # Write the modified frame to the output debug video.
-                        debug_video.write(frame)
+                if self.img_source_name == 'VID':
+                    # Simulate frame skipping
+                    self.img_source.set(cv2.CAP_PROP_POS_FRAMES, loop_counter * frame_skipping)
 
-                    previous_meso = self.meso[:2]
-                    previous_tailbase = self.tailbase[:2]
+                # Print duration of loop
+                debug_print(self.tracking_verbose, "Current duration: " + str(time.time() - timeStart) + " seconds.")
 
-                # Increment frame counter variable every time a frame is read
-                self.frame_counter += 1
+                # Some delay to slow down GPU inference
+                # 0.165 for 6 FPS
+                # 0.1   for 10 FPS
+                if (time.time() - loop_start_time) < 0.1:
+                    time_compensation = 0.1 - round((time.time() - loop_start_time), 3)
+                    time.sleep(time_compensation)
+                    debug_print(self.tracking_verbose, "Total tracking time: " + str(time_compensation + self.inference_time) + "\n\n")
 
-                self.skipped_frame_counter = 0
-            
             else:
-                debug_print(self.tracking_verbose, "!!! DATATYPE OR PROBABILITY PROBLEM")
-                self.skipped_frame_counter = 1
-
-            # Increment loop counter
-            loop_counter += 1
-
-            # Log data
-            self.inference_data_logger(timeStart, frame_skipping)
-
-            if self.img_source_name == 'VID':
-                # Simulate frame skipping
-                self.img_source.set(cv2.CAP_PROP_POS_FRAMES, loop_counter * frame_skipping)
-
-            # Print duration of loop
-            debug_print(self.tracking_verbose, "Current duration: " + str(time.time() - timeStart) + " seconds.")
-
-            # Some delay to slow down GPU inference
-            # 0.165 for 6 FPS
-            # 0.1   for 10 FPS
-            if (time.time() - loop_start_time) < 0.1:
-                time_compensation = 0.1 - round((time.time() - loop_start_time), 3)
-                time.sleep(time_compensation)
-                debug_print(self.tracking_verbose, "Total tracking time: " + str(time_compensation + self.inference_time) + "\n\n")
+                # Check every second if paused
+                time.sleep(1)
         
 
         # Give feedback once tracking is done
@@ -530,13 +566,15 @@ class dlclive_commutator():
 
         # Release image sources and video files
         self.img_source.release()
-        debug_video.release()
+        
+        if self.img_source_name == 'VID':
+            debug_video.release()
 
         # Save data to disk
         self.inference_data_saver()
         
         # Sleep for 5 seconds to display final results
-        # time.sleep(5.0)
+        time.sleep(5.0)
         
         # Close open figure
         plt.close()
