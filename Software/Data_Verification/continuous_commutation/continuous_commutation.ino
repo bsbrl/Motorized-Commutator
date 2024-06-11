@@ -31,7 +31,7 @@ void setup() {
     
   Serial.begin(115200);  // Start serial communication at 115200 baud rate
 
-  steps = -1 * fixedAngle * ((200 * STEPSIZE) / 360.0);
+  steps = fixedAngle * ((200 * STEPSIZE) / 360.0);
     
   // set the maximum speed, acceleration factor,
 	// initial speed and the target position
@@ -47,11 +47,11 @@ void loop() {
 
   if (command == "CW") {
     // Rotate clockwise
-    myStepper.moveTo(myStepper.currentPosition() + steps);
+    myStepper.move(2 * steps);
   } 
   else if (command == "CCW") {
     // Rotate counterclockwise
-    myStepper.moveTo(myStepper.currentPosition() - steps);
+    myStepper.move(-2 * steps);
   }
 
   // Execute the movement
@@ -61,11 +61,11 @@ void loop() {
 
   if (command == "CW") {
     // Change direction
-    command == "CCW";
+    command = "CCW";
   } 
   else if (command == "CCW") {
     // Change direction
-    command == "CW";
+    command = "CW";
   }
 
 
