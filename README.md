@@ -19,3 +19,36 @@ If you are setting up just the rotation stage, there are two parts that you will
 2. [Cable Holder and Support with Pulley](./Motorized_Commutator/Slip_Ring_Pulley_2.SLDPRT) This part holds and supports the cables exiting the slip ring. Also, it is mounted directly on the slip ring and thus provides a means to drive the slip ring through a pulley system.
 
 If you are setting up the translation stage as well, you will need to print an additional part for attaching the rotation state to the gantry: [Motorized Commutator Gantry Attachment](./CAD/Line_Maze_Gantry/Motorized_Comm_Z-Stage_Attachment.SLDPRT)
+
+# Software Installation Instructions (Windows)
+
+The following steps assume you have Anaconda installed on your machine. The commands can be run through Anaconda Powershell Prompt. 
+
+Create a conda environment with Python 3.7 and tensorflow:
+
+```
+conda create -n dlc-commutator python=3.7 tensorflow-gpu==1.13.1 # if using GPU
+conda create -n dlc-commutator python=3.7 tensorflow==1.13.1 # if not using GPU
+```
+
+Activate the conda environment, install the DeepLabCut-live package:
+
+```
+conda activate dlc-commutator
+pip install deeplabcut-live
+```
+
+You can test the dlc-live installation by running the following command:
+`dlc-live-test`
+
+You can find more information about dlc-live installation from the [Github page](https://github.com/DeepLabCut/DeepLabCut-live/blob/master/docs/install_desktop.md).
+
+Install other necessary packages:
+
+```
+pip install pyserial
+pip install keyboard
+pip install matplotlib
+```
+
+Also, install the Arduino software from the [Arduino Website](https://www.arduino.cc/en/software). Once you have this installed, [install the Teensy add-on](https://www.pjrc.com/teensy/td_download.html) in the Arduino IDE. This is needed to flash firmware to the Teensy microcontroller.
