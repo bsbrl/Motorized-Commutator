@@ -59,5 +59,7 @@ Switch to the directory that contains the live tracking software:
 `cd <path to folder>`
 
 These commands can be run through Anaconda Powershell Prompt to start the live tracking software:
-`python apa_live_tracking.py    # APA live tracking for instance`
+```
+python apa_live_tracking.py    # APA live tracking for instance
+```
 
