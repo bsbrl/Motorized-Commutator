@@ -52,3 +52,12 @@ pip install matplotlib
 ```
 
 Also, install the Arduino software from the [Arduino Website](https://www.arduino.cc/en/software). Once you have this installed, [install the Teensy add-on](https://www.pjrc.com/teensy/td_download.html) in the Arduino IDE. This is needed to flash firmware to the Teensy microcontroller.
+
+# Running the Live Tracking Software
+
+Switch to the directory that contains the live tracking software:
+`cd <path to folder>`
+
+These commands can be run through Anaconda Powershell Prompt to start the live tracking software:
+`python apa_live_tracking.py    # APA live tracking for instance`
+
