@@ -24,7 +24,8 @@ class dlclive_commutator():
                  baudrate=None, 
                  inference_duration=100,    # In seconds
                  verbose=True,
-                 dlc_display=False):
+                 dlc_display=False,
+                 save_tracking_video=False):
         
         self.img_source = None
         self.img_source_2 = None
@@ -43,6 +44,7 @@ class dlclive_commutator():
         self.inference_duration = inference_duration
         self.verbose = verbose
         self.dlc_display = dlc_display
+        self.save_tracking_video = save_tracking_video
 
         self.tracking_verbose = True
         self.mcu_control = False
@@ -129,8 +131,8 @@ class dlclive_commutator():
         self.angle_move_amount = 0
         self.commutation_status = 0
 
-        # self.theta = vectorAngle_v2(self.v0, self.v1)   # uncomment to change commutator rotation direction
-        self.theta = vectorAngle_v2(self.v1, self.v0)
+        self.theta = vectorAngle_v2(self.v0, self.v1)   # uncomment to change commutator rotation direction
+        # self.theta = vectorAngle_v2(self.v1, self.v0) # comment to change commutator rotation direction
         debug_print(self.tracking_verbose, "\n*** Angle between the two vectors (degrees): " + str(np.rad2deg(self.theta)))
         
         self.commutative_angle += np.rad2deg(self.theta)
@@ -431,8 +433,9 @@ class dlclive_commutator():
             # Get the current time
             current_time = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
 
-            # debug_video = cv2.VideoWriter("LIVE_VIDEO_" + current_time + ".mp4", cv2.VideoWriter_fourcc(*"mp4v"),
-			# 						    self.tracking_fps, (int(self.video_width/3), int(self.video_height/3)))
+            if (self.save_tracking_video == True):
+                live_video = cv2.VideoWriter("LIVE_VIDEO_" + current_time + ".mp4", cv2.VideoWriter_fourcc(*"mp4v"),
+                                            self.tracking_fps, (int(self.video_width), int(self.video_height)))
 
             # Set buffer size
             self.img_source.set(cv2.CAP_PROP_BUFFERSIZE, 10)
@@ -532,9 +535,10 @@ class dlclive_commutator():
                             # Uncomment to draw tracking points on exported video frames
                             # frame = self.draw_tracking_points_on_frame(frame)
                             
-                            # Write the modified frame to the output debug video.
-                            # debug_video.write(cv2.resize(frame, (int(self.video_width/3), int(self.video_height/3))))
-                            print(" ")
+                            if (self.save_tracking_video == True):
+                                # Write the modified frame to the output debug video.
+                                live_video.write(cv2.resize(frame, (int(self.video_width), int(self.video_height))))
+                                # print(" ")
 
                         previous_meso = self.meso[:2]
                         previous_tailbase = self.tailbase[:2]
@@ -583,6 +587,9 @@ class dlclive_commutator():
         
         if self.img_source_name == 'VID':
             debug_video.release()
+
+        if ((self.save_tracking_video == True) and (self.img_source_name == 'CAM')):
+            live_video.release()
 
         # Save data to disk
         self.inference_data_saver()

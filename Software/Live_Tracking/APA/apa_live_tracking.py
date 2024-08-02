@@ -14,7 +14,7 @@ dlc_config_modelpath = r"C:\Users\suhasa-lab\Downloads\DLC_APA_mobilenet"
 video_file_name = r"C:\Users\kapil\Documents\DLC\open_field-ks-2024-06-04\videos\WIN_20240604_12_25_56_Pro.mp4"
 
 # Serial conection parameters
-selected_serial_port = "COM6"
+selected_serial_port = "COM5"
 baud_rate = 115200						# 115200
 serial_timeout = 1
 connect_arduino = True
@@ -36,7 +36,8 @@ poser = dlclive_commutator(dlc_model_path=dlc_config_modelpath,
                             baudrate=baud_rate,
 							inference_duration=inference_duration,
 							verbose=True,
-                            dlc_display=True)
+                            dlc_display=True,
+                            save_tracking_video=True)
 
 try:	
     poser.start_posing()
