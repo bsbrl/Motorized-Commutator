@@ -22,13 +22,12 @@ class dlclive_commutator():
                  skip_frames=0, 
                  COM_Port=None, 
                  baudrate=None, 
-                 inference_duration=100,    # In seconds
+                 tracking_duration=100,    # In seconds
                  verbose=True,
                  dlc_display=False,
                  save_tracking_video=False):
         
         self.img_source = None
-        self.img_source_2 = None
         self.dlc_live = None
         self.mcu = None
         self.dlc_proc = None
@@ -41,12 +40,11 @@ class dlclive_commutator():
         self.skip_frames = skip_frames
         self.COM_Port = COM_Port
         self.baudrate = baudrate
-        self.inference_duration = inference_duration
-        self.verbose = verbose
+        self.tracking_duration = tracking_duration
         self.dlc_display = dlc_display
         self.save_tracking_video = save_tracking_video
 
-        self.tracking_verbose = True
+        self.tracking_verbose = verbose
         self.mcu_control = False
         
         self.theta = 0
@@ -241,7 +239,7 @@ class dlclive_commutator():
                 ret, frame = self.img_source.read()
         
                 # PRINT IMAGE DETAILS
-                if self.verbose:
+                if self.tracking_verbose:
                     # height, width, number of channels in image
                     height = frame.shape[0]
                     width = frame.shape[1]
@@ -459,7 +457,7 @@ class dlclive_commutator():
         timeStart = time.time()
         loop_counter = 0
 
-        while self.img_source.isOpened() and ((time.time() - timeStart) <= self.inference_duration) and self.running:
+        while self.img_source.isOpened() and ((time.time() - timeStart) <= self.tracking_duration) and self.running:
 
             if not self.paused:
 
@@ -488,7 +486,7 @@ class dlclive_commutator():
                 
                 # Get duration
                 self.inference_time = time.time() - loop_start_time
-                debug_print(self.verbose, "--- %s seconds ---" % self.inference_time)
+                debug_print(self.tracking_verbose, "--- %s seconds ---" % self.inference_time)
                 
                 self.lnut = img_pose[0]
                 self.rnut = img_pose[1]
@@ -568,8 +566,8 @@ class dlclive_commutator():
                 # Some delay to slow down GPU inference
                 # 0.165 for 6 FPS
                 # 0.1   for 10 FPS
-                if (time.time() - loop_start_time) < 0.1:
-                    time_compensation = 0.1 - round((time.time() - loop_start_time), 3)
+                if (time.time() - loop_start_time) < self.tracking_period:
+                    time_compensation = self.tracking_period - round((time.time() - loop_start_time), 3)
                     time.sleep(time_compensation)
                     debug_print(self.tracking_verbose, "Total tracking time: " + str(time_compensation + self.inference_time) + "\n\n")
 

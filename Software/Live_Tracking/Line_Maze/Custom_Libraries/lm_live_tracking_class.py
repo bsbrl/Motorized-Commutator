@@ -20,8 +20,7 @@ class dlclive_commutator():
                  skip_frames=0, 
                  COM_Port=None, 
                  baudrate=None, 
-                 plot_donut=False,
-                 frames_to_read=100, 
+                 tracking_duration=100,    # In seconds
                  verbose=True,
                  dlc_display=False):
         
@@ -38,35 +37,40 @@ class dlclive_commutator():
         self.skip_frames = skip_frames
         self.COM_Port = COM_Port
         self.baudrate = baudrate
-        self.plot_donut = plot_donut
-        self.mcu_control = False
-        self.frames_to_read = frames_to_read
-        self.verbose = verbose
+        self.tracking_duration = tracking_duration
         self.dlc_display = dlc_display
+
+        self.tracking_verbose = verbose
+        self.mcu_control = False
         
         self.theta = 0
         self.commutative_angle = 0
         self.frame_counter = 0
         self.rotations = 0
+
+        # Flags to control the loop and pause state
+        self.running = True
+        self.paused = False
+        
+        self.angle_threshold = 225
+        self.x_threshold = 75.
+        self.tracking_fps = 10              # In frames per second
+        self.tracking_period = 0.1          # In seconds
+        # self.point_filter_radius = 100
+        # self.points_filtered = 0
+
         self.v0 = [0, 0]
         self.v1 = [0, 0]
-        self.tracking_verbose = True
-        self.angle_threshold = 225
-        self.x_threshold = 75
-        self.point_filter_radius = 100
-        self.points_filtered = 0
         self.lnut = []
         self.rnut = []
         self.meso = []
         self.tailbase = []
         self.mc_midpoint_offset = 50
-        
-        self.sleep_time = 0.15     # 0.15 IN MILLISECONDS
+        self.x_move_amount = 0
+        self.angle_move_amount = 0
 
         self.x_move_timer = 0
         self.angle_move_timer = 0
-        self.x_move_amount = 0
-        self.angle_move_amount = 0
         self.move_timer_offset = 300	# milliseconds
         self.m = 0.754
         self.b = 337.7
@@ -83,7 +87,7 @@ class dlclive_commutator():
         self.video_fps = 30
         self.video_num_frames = 0
 
-        # Plot variables
+        # Logger variables
         self.inference_time = 0;                    
         self.inference_time_logger = np.array([])
         self.frame_inferenced_counter = np.array([])
@@ -373,7 +377,7 @@ class dlclive_commutator():
                 ret, frame = self.img_source.read()
         
                 # PRINT IMAGE DETAILS
-                if self.verbose:
+                if self.tracking_verbose:
                     # height, width, number of channels in image
                     height = frame.shape[0]
                     width = frame.shape[1]
@@ -577,7 +581,7 @@ class dlclive_commutator():
             
             # Get duration
             self.inference_time = time.time() - start_time
-            debug_print(self.verbose, "--- %s seconds ---" % self.inference_time)
+            debug_print(self.tracking_verbose, "--- %s seconds ---" % self.inference_time)
             
             self.lnut = img_pose[0]
             self.rnut = img_pose[1]
@@ -657,7 +661,6 @@ class dlclive_commutator():
 
             # Some delay to slow down GPU inference; comment out
             if self.inference_time < 0.165:
-                # time.sleep(self.sleep_time)
                 time_compensation = 0.165 - round(self.inference_time, 3)
                 time.sleep(time_compensation)
                 debug_print(self.tracking_verbose, "Total tracking time: " + str(time_compensation + self.inference_time))
