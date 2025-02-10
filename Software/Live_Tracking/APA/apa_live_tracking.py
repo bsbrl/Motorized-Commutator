@@ -9,7 +9,7 @@ dlc_config_modelpath = r"C:\Users\suhasa-lab\Downloads\DLC_APA_mobilenet"
 video_file_name = r"C:\Users\VIDEO-PATH.mp4"
 
 # Serial conection parameters
-selected_serial_port = "COM6"
+selected_serial_port = "COM5"
 baud_rate = 115200						# 115200
 
 # Camera and video
@@ -29,7 +29,8 @@ poser = dlclive_commutator(dlc_model_path=dlc_config_modelpath,
                             baudrate=baud_rate,                     # Comment for video simulation
 							tracking_duration=tracking_duration,
 							verbose=True,
-                            dlc_display=True)
+                            dlc_display=True,
+                            save_tracking_video=True)
 
 try:	
     poser.start_posing()
