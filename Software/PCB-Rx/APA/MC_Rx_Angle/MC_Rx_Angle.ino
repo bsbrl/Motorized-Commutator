@@ -4,12 +4,13 @@
   Purpose: Receives motor commands wirelessly and drives motor.
 
   @author Ibrahim Oladepo
-  @version 1.0  5-March-2024
+  @version 2.0  10-February-2025
 
   - This script receives data wireless from the transmitter.
   - The received data are motor commands.
   - Motor is driven using acceleration and decelerations to achieve the target position.
   - This code has been updated to work for just TMC2209 stepper motor driver
+  - Compatible with V2 PCB with silent motor driver.
 */
 
 #include <Arduino.h>
@@ -19,16 +20,17 @@
 #include <AccelStepper.h>
 #include <TMCStepper.h>
 
-#define STEPSIZE        256     // 64
+
+#define STEPSIZE        64     // 64 | 256
 #define STEPS           200
-#define SCALER          16
+#define SCALER          48
 #define STEPS_PER_MM    80
 #define REVOLUTION      (40 * (STEPSIZE / SCALER) * 3 * STEPS_PER_MM)
 
 #define motorInterfaceType 1
 
-#define DIR_PIN     2
-#define STEP_PIN    3
+#define DIR_PIN     16
+#define STEP_PIN    17
 
 #define MANUAL_LED  15
 #define AUTO_LED    14
@@ -38,6 +40,7 @@
 #define R_SENSE 0.11f
 
 RF24 radio(9, 10); // CE, CSN
+
 const byte address[6] = "00001";
 
 struct Data_Package {
@@ -48,7 +51,7 @@ struct Data_Package {
   int autoMode = 0;
 };
 
-Data_Package data; // Create a variable with the above structure
+Data_Package data; //Create a variable with the above structure
 
 // Define stepper motor connections and motor interface type. Motor interface type must be set to 1 when using a driver
 // Stepper stepper(STEPS, dirPin, stepPin); // Pin 2 connected to DIRECTION & Pin 3 connected to STEP Pin of Driver
@@ -69,46 +72,28 @@ int fixedAngle = 1710;            // 1710 for 256 microsteps
 
 // int angle = 0;
 int steps = 0;
-int stepperSpeed = 1000;           // 2500 is default  50
-int stepperAcceleration = 1000;     // 4000 is default  200
+int stepperSpeed = 5000;           // 2500 is default  50
+int stepperAcceleration = 5000;     // 4000 is default  200
 // int vActual = MAX_SPEED / SPEED_DIVIDER;           // Default is 102400/2 for 256 microsteps
 
 // Variable for changing motor direction via UART
 bool shaft = false; 
 
+
 void setup() {
-  
+
   Serial.begin(115200);
   Serial.println("Initializing ...");
 
   pinMode(DIR_PIN, OUTPUT);
   pinMode(STEP_PIN, OUTPUT);
-  
+
   // **********************************************
   // CONFIGURE THE NRF24L01
 
   radio.begin();
-
-  //set the address
   radio.openReadingPipe(0, address);
-
-  // Set power level
-  // radio.setPALevel( RF24_PA_MIN ); // -18dBm
-  // radio.setPALevel( RF24_PA_LOW ); // -12dBm
-  radio.setPALevel( RF24_PA_HIGH ); // -6dBm
-
-  // changer the transfer rate as needed
-  // radio.setDataRate( RF24_250KBPS );
-  // radio.setDataRate( RF24_1MBPS );
-  radio.setDataRate( RF24_2MBPS );
-
-  // Change the channel (transmit-receive frequency) as needed
-  // channel = 0 to 125 correspond to the range 2,400GHz to 2,500GHz
-  radio.setChannel( 90 );
-
-  radio.printDetails();
-
-  //Set module as receiver
+  radio.setPALevel(RF24_PA_MIN);
   radio.startListening();
 
   // **********************************************
@@ -118,23 +103,21 @@ void setup() {
 
   driver.begin();                // Initialize driver                        
   driver.toff(5);                // Enables driver in software
-  driver.rms_current(1400);       // Set motor RMS current | 1400 is max | 600 default
+  driver.rms_current(600);       // Set motor RMS current | 1400 is max | 600 default
   driver.microsteps(STEPSIZE);           // Set microsteps to 256 (preferred) or 64 or 32
   driver.pwm_autoscale(true);   // Needed for stealthChop
   driver.en_spreadCycle(true);   // Toggle spreadCycle for smooth & silent operation
-  driver.VACTUAL(0); //SET initial SPEED OF MOTOR to zero
+  // driver.VACTUAL(0); //SET initial SPEED OF MOTOR to zero
 
   // Set the maximum speed, acceleration factor,
 	// initial speed and the target position
-	myStepper.setMaxSpeed(STEPS_PER_MM * 200);
-	myStepper.setAcceleration(STEPS_PER_MM * 1000);
-	myStepper.setSpeed(stepperSpeed);
+	myStepper.setMaxSpeed(24000);
+	myStepper.setAcceleration(24000);
+	myStepper.setSpeed(24000);
   myStepper.stop();
 
-  if (myStepper.isRunning()){
-    driver.VACTUAL(0);
-    myStepper.stop();
-  }
+  myStepper.move(0);
+  myStepper.stop();
 
   Serial.println( "*****************" );
   Serial.println( "Stepper Configured!" );
@@ -143,9 +126,8 @@ void setup() {
 
   Serial.println( "*****************" );
   Serial.println( "APA MC Rx angle is ready!" );
-  
-}
 
+}
 
 void loop() {
 
@@ -210,7 +192,7 @@ void loop() {
       }
 
     }
-    else if (data.autoMode == 1){
+     else if (data.autoMode == 1){
       
       // AUTOMATIC MODE
       digitalWrite(MANUAL_LED, LOW);
@@ -234,19 +216,25 @@ void loop() {
       myStepper.runToPosition();
 
     }
-    
   }
 
-  // if (myStepper.distanceToGo() != 0){
-  //   driver.VACTUAL(vActual);
-  //   myStepper.run();
-  // }
-  // else{
-  //   driver.VACTUAL(0);
-  // }
+  // Serial.print("angle: ");
+  // Serial.print(data.angle);
+  // Serial.print(" xMove: ");
+  // Serial.print(data.xMove);
+  // Serial.print(" yMove: ");
+  // Serial.print(data.yMove);                          
+  // Serial.print(" zMove: ");
+  // Serial.print(data.zMove);
+  // Serial.print(" autoMode: ");
+  // Serial.println(data.autoMode);
 
   if (myStepper.distanceToGo() != 0){
+    // Serial.print("Distance to go: ");
+    // Serial.println(myStepper.distanceToGo());
     myStepper.run();
   }
-  
+  // myStepper.run();
+  // delay(250);
+
 }

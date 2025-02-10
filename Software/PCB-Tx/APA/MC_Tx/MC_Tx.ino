@@ -4,10 +4,11 @@
   Purpose: Transmits motor commands wirelessly.
 
   @author Ibrahim Oladepo
-  @version 1.0  28-February-2024
+  @version 2.0  10-February-2025
 
   - This script sends motor commands wirelessly to the receiver(s).
   - This code can switch between manual and automatic control mode.
+  - Compatible with V2 PCB with silent motor driver.
 */
 
 #include <Arduino.h>
@@ -21,8 +22,8 @@
 #define ANALOG_STICK_PIN_Z A6
 #define ANALOG_STICK_PIN_ANGLE A5
 
-#define MANUAL_LED  15
-#define AUTO_LED    14
+#define MANUAL_LED  21
+#define AUTO_LED    22
 
 RF24 radio(9, 10); // CE, CSN
 const byte address[6] = "00001";
@@ -37,33 +38,17 @@ struct Data_Package {
 
 Data_Package data; // Create a variable with the above structure
 
-const int togglePin = 22;  // Variable to switch between manual and automatic mode
-
-int equiValue = 512;
-int equiOffset = 300;
-
-int fixedAngle = 180;
-int fixedXMove = 100;
-int fixedYMove = 100;
-int fixedZMove = 100;
-
-int motorDelay = 350;   // 350
-
-int analogStickValueX = 0;
-int analogStickValueY = 0;
-int analogStickValueZ = 0;
-int analogStickValueAngle = 0;
-
+const int togglePin = 16;  // Variable to switch between manual and automatic mode
 
 void setup() {
-  
+
   Serial.begin(115200);
 
   // Set serial timeout
   Serial.setTimeout(50);  
 
   // pinMode(analogStickPin, INPUT);
-  pinMode(togglePin, INPUT);
+  pinMode(togglePin, INPUT_PULLUP);
 
   radio.begin();
   
@@ -71,7 +56,8 @@ void setup() {
   // CONFIGURE THE NRF24L01
 
   //set the address
-  radio.openReadingPipe(0, address);
+  // #### CHECK ####
+  radio.openWritingPipe(address);
 
   // Set power level
   // radio.setPALevel( RF24_PA_MIN ); // -18dBm
@@ -79,13 +65,13 @@ void setup() {
   // radio.setPALevel( RF24_PA_HIGH ); // -6dBm
 
   // changer the transfer rate as needed
-  radio.setDataRate( RF24_250KBPS );
+  // radio.setDataRate( RF24_250KBPS );
   // radio.setDataRate( RF24_1MBPS );
   // radio.setDataRate( RF24_2MBPS );
 
   // Change the channel (transmit-receive frequency) as needed
   // channel = 0 to 125 correspond to the range 2,400GHz to 2,500GHz
-  radio.setChannel( 90 );
+  // radio.setChannel( 90 );
 
   radio.printDetails();
   
@@ -97,55 +83,30 @@ void setup() {
 
   // Send initial wireless data
   data.autoMode = digitalRead(togglePin);
-  data.xMove = 0;
-  data.zMove = 0;
-  data.yMove = 0;
-  data.angle = 0;
   radio.write(&data, sizeof(Data_Package));
-  
+
 }
 
-
 void loop() {
-
+  
   if (digitalRead(togglePin) == LOW){
-    
+
     // MANUAL MODE //
     digitalWrite(AUTO_LED, LOW);
     digitalWrite(MANUAL_LED, HIGH);
 
-    // Debug print
-    // Serial.println("*** Manual Mode ***");
-
     data.autoMode = 0;
 
-    // Read analog stick values
-    analogStickValueX = analogRead(ANALOG_STICK_PIN_X);
-    Serial.print("X value: ");
-    Serial.println(analogStickValueX);
+    // Update values to send to the receiver
+    data.xMove = analogRead(ANALOG_STICK_PIN_X);
+    data.yMove = analogRead(ANALOG_STICK_PIN_Y);
+    data.zMove = analogRead(ANALOG_STICK_PIN_Z);
+    data.angle = analogRead(ANALOG_STICK_PIN_ANGLE);
 
-    analogStickValueY = analogRead(ANALOG_STICK_PIN_Y);
-    Serial.print("Y value: ");
-    Serial.println(analogStickValueY);
-
-    analogStickValueZ = analogRead(ANALOG_STICK_PIN_Z);
-    Serial.print("Z value: ");
-    Serial.println(analogStickValueZ);
-
-    analogStickValueAngle = analogRead(ANALOG_STICK_PIN_ANGLE);
-    Serial.print("ANGLE value: ");
-    Serial.println(analogStickValueAngle);
-
-    // Send value to receiver
-    data.xMove = analogStickValueX;
-    data.yMove = analogStickValueY;
-    data.zMove = analogStickValueZ;
-    data.angle = analogStickValueAngle;
-
-    // Send wireless data
-    radio.write(&data, sizeof(Data_Package));    
-
-    delay(motorDelay);
+    // Send the whole data from the structure to the receiver
+    radio.write(&data, sizeof(Data_Package));
+    
+    delay(350);
 
   }
   else{
@@ -182,5 +143,5 @@ void loop() {
     }
 
   }
-  
+
 }
